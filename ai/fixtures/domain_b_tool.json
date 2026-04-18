@@ -1,0 +1,33 @@
+{
+  "name": "Market Brief Builder",
+  "description": "Turns a short ticker list into a compact analyst-ready watchlist brief.",
+  "transformation_summary": [
+    "Parse a short ticker list and market data payload",
+    "Summarize the watchlist in analyst-ready language",
+    "Output a compact HTML brief"
+  ],
+  "input_spec": {
+    "primary_input": "json",
+    "accepts": ["paste"]
+  },
+  "output_spec": {
+    "format": "html",
+    "filename_pattern": "market_brief_{YYYY-MM-DD}.html"
+  },
+  "trigger": {
+    "type": "on_url_visit",
+    "url_pattern": "research.example.com/tickers",
+    "prompt": "Want a quick brief for these tickers?"
+  },
+  "ui_prefs": {
+    "theme": "light",
+    "density": "comfortable",
+    "primary_label": "Build Brief",
+    "show_preview": true
+  },
+  "primitives_used": [],
+  "programmatic_interface": {
+    "input_type": "json",
+    "output_type": "html"
+  }
+}

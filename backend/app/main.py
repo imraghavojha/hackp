@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from backend.app.artifacts.store import ArtifactStore
@@ -12,6 +15,7 @@ from backend.app.routes.v1.events import router as events_router
 from backend.app.routes.v1.feedback import router as feedback_router
 from backend.app.routes.v1.tools import router as tools_router
 from backend.app.scheduler.detect_loop import DetectionScheduler, HttpAiGateway
+from backend.app.scheduler.runner import SchedulerRunner, stop_scheduler_task
 from backend.app.store.db import Database
 from backend.app.store.repository import PlatformRepository
 
@@ -30,14 +34,31 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         artifact_store=artifact_store,
         ai_gateway=HttpAiGateway(settings.ai_base_url),
     )
+    scheduler_runner = SchedulerRunner(
+        repository=repository,
+        scheduler=scheduler,
+        interval_seconds=settings.scheduler_interval_seconds,
+    )
 
-    app = FastAPI(title="Personal Workflow Agent Backend", version="0.1.0")
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        task: asyncio.Task[None] | None = None
+        if settings.scheduler_enabled:
+            task = asyncio.create_task(scheduler_runner.run_forever(), name="pwa-scheduler-runner")
+        try:
+            yield
+        finally:
+            if task is not None:
+                await stop_scheduler_task(task, scheduler_runner)
+
+    app = FastAPI(title="Personal Workflow Agent Backend", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.repository = repository
     app.state.artifact_store = artifact_store
     app.state.registry = registry
     app.state.orchestrator = orchestrator
     app.state.scheduler = scheduler
+    app.state.scheduler_runner = scheduler_runner
 
     app.include_router(events_router)
     app.include_router(tools_router)

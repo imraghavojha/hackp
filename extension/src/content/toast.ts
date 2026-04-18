@@ -22,7 +22,7 @@ function ensureToastStyles() {
     }
     .pwa-toast {
       border-radius: 18px;
-      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.28);
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
       border: 1px solid rgba(148, 163, 184, 0.24);
       overflow: hidden;
       transform: translateY(18px);
@@ -30,12 +30,12 @@ function ensureToastStyles() {
       animation: pwa-slide-in 180ms ease-out forwards;
     }
     .pwa-toast[data-theme="dark"] {
-      background: #0f172a;
-      color: #e2e8f0;
+      background: #1f2937;
+      color: #f3f4f6;
     }
     .pwa-toast[data-theme="light"] {
       background: #ffffff;
-      color: #0f172a;
+      color: #111827;
     }
     .pwa-toast__inner {
       padding: 16px;
@@ -55,7 +55,8 @@ function ensureToastStyles() {
     .pwa-toast__prompt {
       font-size: 0.92rem;
       line-height: 1.45;
-      opacity: 0.85;
+      color: inherit;
+      opacity: 0.72;
     }
     .pwa-toast__controls {
       display: flex;
@@ -71,10 +72,15 @@ function ensureToastStyles() {
       cursor: pointer;
     }
     .pwa-toast__button--primary {
-      background: #38bdf8;
-      color: #082f49;
+      background: #1d4ed8;
+      color: #ffffff;
     }
     .pwa-toast__button--secondary {
+      background: #f8fafc;
+      color: #111827;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+    }
+    .pwa-toast[data-theme="dark"] .pwa-toast__button--secondary {
       background: transparent;
       color: inherit;
       border: 1px solid rgba(148, 163, 184, 0.24);
@@ -131,7 +137,7 @@ export function showSuggestionToast(tool: ToolRecord, origin: string): ToastHand
         <div class="pwa-toast__controls">
           <button class="pwa-toast__button pwa-toast__button--primary" data-action="open">Open tool</button>
           <button class="pwa-toast__button pwa-toast__button--secondary" data-action="not-now">Not now</button>
-          <button class="pwa-toast__ghost" data-action="menu">More</button>
+          <button class="pwa-toast__ghost" data-action="menu">Options</button>
         </div>
         <div class="pwa-toast__menu" data-open="false">
           <button class="pwa-toast__ghost" data-action="suppress">Don't suggest here again</button>

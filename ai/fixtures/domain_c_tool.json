@@ -1,0 +1,33 @@
+{
+  "name": "Support Reply Drafter",
+  "description": "Drafts a calm customer reply from a repeated ticket triage pattern.",
+  "transformation_summary": [
+    "Parse the ticket and customer context",
+    "Draft a concise empathetic reply",
+    "Output copy-ready support text"
+  ],
+  "input_spec": {
+    "primary_input": "json",
+    "accepts": ["paste"]
+  },
+  "output_spec": {
+    "format": "text",
+    "filename_pattern": "reply_{YYYY-MM-DD}.txt"
+  },
+  "trigger": {
+    "type": "on_url_visit",
+    "url_pattern": "support.example.com/tickets",
+    "prompt": "I drafted a reply for this ticket."
+  },
+  "ui_prefs": {
+    "theme": "light",
+    "density": "comfortable",
+    "primary_label": "Draft Reply",
+    "show_preview": true
+  },
+  "primitives_used": [],
+  "programmatic_interface": {
+    "input_type": "json",
+    "output_type": "text"
+  }
+}

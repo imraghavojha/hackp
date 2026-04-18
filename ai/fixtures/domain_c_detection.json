@@ -1,0 +1,14 @@
+{
+  "detected": true,
+  "signature": "sig_domain_c_reply_drafter",
+  "confidence": 0.8,
+  "transformation_name": "Support Reply Drafter",
+  "summary": "Drafts a calm customer reply from a repeated ticket triage pattern.",
+  "input_characterization": "Support ticket JSON and customer profile JSON",
+  "output_characterization": "Copy-ready support reply text",
+  "event_window": {
+    "start": "2026-04-18T09:21:00Z",
+    "end": "2026-04-18T09:22:00Z"
+  },
+  "repetition_count": 2
+}

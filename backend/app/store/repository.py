@@ -209,6 +209,26 @@ class PlatformRepository:
             ).fetchall()
         return [f"[{row['context']}] {row['feedback']}" for row in rows]
 
+    def list_user_ids(self) -> list[str]:
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT DISTINCT user_id
+                FROM (
+                    SELECT user_id FROM events
+                    UNION
+                    SELECT user_id FROM tools
+                    UNION
+                    SELECT user_id FROM feedback
+                    UNION
+                    SELECT user_id FROM scheduler_state
+                )
+                WHERE user_id IS NOT NULL
+                ORDER BY user_id ASC
+                """
+            ).fetchall()
+        return [str(row["user_id"]) for row in rows]
+
     def get_scheduler_state(self, user_id: str) -> dict[str, Any]:
         with self.database.connect() as connection:
             row = connection.execute(

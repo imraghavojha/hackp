@@ -100,21 +100,20 @@ export function PopupApp() {
         width: 360,
         minHeight: 420,
         padding: 18,
-        background:
-          "radial-gradient(circle at top, rgba(56, 189, 248, 0.2), transparent 35%), #09111f",
-        color: "#e2e8f0",
+        background: "#f3f4f6",
+        color: "#111827",
         fontFamily: '"IBM Plex Sans", "Segoe UI", sans-serif'
       }}>
       <section
         style={{
-          background: "rgba(15, 23, 42, 0.92)",
+          background: "#ffffff",
           border: "1px solid rgba(148, 163, 184, 0.22)",
-          borderRadius: 20,
+          borderRadius: 16,
           padding: 16,
-          boxShadow: "0 18px 48px rgba(15, 23, 42, 0.32)"
+          boxShadow: "0 10px 24px rgba(15, 23, 42, 0.08)"
         }}>
         <h1 style={{ margin: "0 0 8px", fontSize: "1.1rem" }}>Personal Workflow Agent</h1>
-        <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.9rem" }}>{status}</p>
+        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>{status}</p>
       </section>
 
       <section style={{ marginTop: 16 }}>
@@ -126,8 +125,8 @@ export function PopupApp() {
                 borderRadius: 16,
                 border: "1px solid rgba(148, 163, 184, 0.18)",
                 padding: 14,
-                color: "#94a3b8",
-                background: "rgba(15, 23, 42, 0.72)"
+                color: "#6b7280",
+                background: "#ffffff"
               }}>
               Visit a matching page and tool suggestions will start appearing here.
             </div>
@@ -139,11 +138,12 @@ export function PopupApp() {
                   borderRadius: 16,
                   border: "1px solid rgba(148, 163, 184, 0.18)",
                   padding: 14,
-                  background: "rgba(15, 23, 42, 0.72)"
+                  background: "#ffffff",
+                  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.05)"
                 }}>
                 <div style={{ fontWeight: 700 }}>{tool.name}</div>
-                <div style={{ color: "#94a3b8", fontSize: "0.86rem", marginTop: 4 }}>{tool.description}</div>
-                <div style={{ color: "#94a3b8", fontSize: "0.8rem", marginTop: 8 }}>
+                <div style={{ color: "#6b7280", fontSize: "0.86rem", marginTop: 4 }}>{tool.description}</div>
+                <div style={{ color: "#6b7280", fontSize: "0.8rem", marginTop: 8 }}>
                   Last seen: {tool.last_opened_at ?? tool.last_suggested_at ?? tool.stats?.last_used ?? "not yet"}
                 </div>
                 <button
@@ -152,8 +152,8 @@ export function PopupApp() {
                     marginTop: 10,
                     border: 0,
                     borderRadius: 999,
-                    background: "#38bdf8",
-                    color: "#082f49",
+                    background: "#1d4ed8",
+                    color: "#ffffff",
                     padding: "10px 14px",
                     fontWeight: 700,
                     cursor: "pointer"
@@ -168,8 +168,8 @@ export function PopupApp() {
 
       <section style={{ marginTop: 16 }}>
         <h2 style={{ margin: "0 0 8px", fontSize: "0.95rem" }}>Privacy</h2>
-        <p style={{ margin: "0 0 8px", color: "#94a3b8", fontSize: "0.84rem" }}>
-          Current user: <strong style={{ color: "#e2e8f0" }}>{settings?.userId ?? "bob"}</strong>
+        <p style={{ margin: "0 0 8px", color: "#6b7280", fontSize: "0.84rem" }}>
+          Current user: <strong style={{ color: "#111827" }}>{settings?.userId ?? "bob"}</strong>
         </p>
         <textarea
           value={denylistValue}
@@ -180,8 +180,8 @@ export function PopupApp() {
             boxSizing: "border-box",
             borderRadius: 14,
             border: "1px solid rgba(148, 163, 184, 0.22)",
-            background: "rgba(15, 23, 42, 0.72)",
-            color: "#e2e8f0",
+            background: "#ffffff",
+            color: "#111827",
             padding: 12,
             font: '13px/1.4 "IBM Plex Mono", monospace'
           }}
@@ -192,8 +192,8 @@ export function PopupApp() {
             marginTop: 10,
             border: 0,
             borderRadius: 999,
-            background: "#22c55e",
-            color: "#052e16",
+            background: "#1d4ed8",
+            color: "#ffffff",
             padding: "10px 14px",
             fontWeight: 700,
             cursor: "pointer"
