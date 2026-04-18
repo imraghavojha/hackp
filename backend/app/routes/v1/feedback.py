@@ -1,8 +1,15 @@
 from __future__ import annotations
 
-from typing import Any
+from fastapi import APIRouter, Request
+
+from backend.app.contracts import FeedbackRequest, FeedbackResponse
 
 
-def post_feedback(payload: dict[str, Any]) -> dict[str, Any]:
-    tool_id = payload.get("tool_id", "unknown")
-    return {"stored": True, "memory_id": f"mem_{tool_id}"}
+router = APIRouter(prefix="/v1", tags=["feedback"])
+
+
+@router.post("/feedback", response_model=FeedbackResponse)
+def post_feedback(payload: FeedbackRequest, request: Request) -> FeedbackResponse:
+    repository = request.app.state.repository
+    memory_id = repository.store_feedback(payload)
+    return FeedbackResponse(stored=True, memory_id=memory_id)

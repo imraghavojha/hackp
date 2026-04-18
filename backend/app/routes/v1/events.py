@@ -1,9 +1,18 @@
 from __future__ import annotations
 
-from typing import Any
+from fastapi import APIRouter, Request
+
+from backend.app.contracts import EventsBatchRequest, EventsBatchResponse
 
 
-def post_events(payload: dict[str, Any]) -> dict[str, int]:
-    events = payload.get("events", [])
-    accepted = len(events)
-    return {"accepted": accepted, "buffered": max(0, accepted - 500)}
+router = APIRouter(prefix="/v1", tags=["events"])
+
+
+@router.post("/events", response_model=EventsBatchResponse)
+def post_events(payload: EventsBatchRequest, request: Request) -> EventsBatchResponse:
+    repository = request.app.state.repository
+    scheduler = request.app.state.scheduler
+    accepted = repository.insert_events(payload.user_id, payload.events)
+    scheduler.maybe_process_user(payload.user_id)
+    buffered = repository.count_pending_events(payload.user_id)
+    return EventsBatchResponse(accepted=accepted, buffered=buffered)

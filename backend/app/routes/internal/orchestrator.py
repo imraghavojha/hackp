@@ -1,8 +1,19 @@
 from __future__ import annotations
 
-from typing import Any
+from fastapi import APIRouter, Request
+
+from backend.app.contracts import OrchestratorRunRequest, OrchestratorRunResponse
 
 
-def run_tool(payload: dict[str, Any]) -> dict[str, Any]:
-    tool_id = payload.get("tool_id", "tool_stub")
-    return {"run_id": f"run_{tool_id}", "output_ref": "inline", "succeeded": True}
+router = APIRouter(prefix="/internal/orchestrator", tags=["orchestrator"])
+
+
+@router.post("/run_tool", response_model=OrchestratorRunResponse)
+def run_tool(payload: OrchestratorRunRequest, request: Request) -> OrchestratorRunResponse:
+    orchestrator = request.app.state.orchestrator
+    return orchestrator.run_tool(
+        tool_id=payload.tool_id,
+        user_id=payload.user_id,
+        input_data=payload.input_data,
+        config_override=payload.config_override,
+    )

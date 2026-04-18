@@ -1,10 +1,28 @@
 from __future__ import annotations
 
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import HTMLResponse
 
-def create_artifact(html_artifact: str) -> dict[str, str]:
-    artifact_id = f"art_{len(html_artifact)}"
-    return {"artifact_id": artifact_id}
+from backend.app.contracts import InternalArtifactCreateRequest, InternalArtifactCreateResponse
 
 
-def get_artifact(artifact_id: str) -> str:
-    return f"runtime/shell/tool_template.html#artifact={artifact_id}"
+router = APIRouter(prefix="/internal", tags=["artifacts"])
+
+
+@router.post("/artifacts", response_model=InternalArtifactCreateResponse)
+def create_artifact(payload: InternalArtifactCreateRequest, request: Request) -> InternalArtifactCreateResponse:
+    repository = request.app.state.repository
+    artifact_store = request.app.state.artifact_store
+    artifact_id, artifact_path = artifact_store.create_artifact(payload.html_artifact)
+    repository.store_artifact_record(artifact_id=artifact_id, user_id=payload.user_id, html_path=artifact_path)
+    return InternalArtifactCreateResponse(artifact_id=artifact_id)
+
+
+@router.get("/artifacts/{artifact_id}", response_class=HTMLResponse)
+def get_artifact(artifact_id: str, request: Request) -> HTMLResponse:
+    repository = request.app.state.repository
+    artifact_store = request.app.state.artifact_store
+    artifact_record = repository.get_artifact_record(artifact_id)
+    if artifact_record is None:
+        raise HTTPException(status_code=404, detail="Artifact not found")
+    return HTMLResponse(content=artifact_store.read_artifact(artifact_record["html_path"]))
