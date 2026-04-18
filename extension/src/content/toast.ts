@@ -135,7 +135,7 @@ export function showSuggestionToast(tool: ToolRecord, origin: string): ToastHand
           <button class="pwa-toast__ghost" data-action="dismiss" aria-label="Dismiss">×</button>
         </div>
         <div class="pwa-toast__controls">
-          <button class="pwa-toast__button pwa-toast__button--primary" data-action="open">Open tool</button>
+          <button class="pwa-toast__button pwa-toast__button--primary" data-action="open">Open helper</button>
           <button class="pwa-toast__button pwa-toast__button--secondary" data-action="not-now">Not now</button>
           <button class="pwa-toast__ghost" data-action="menu">Options</button>
         </div>

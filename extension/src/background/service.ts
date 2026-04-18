@@ -61,7 +61,19 @@ async function fetchToolsForUrl(url: string): Promise<ExtensionMessageResponse> 
 }
 
 async function openTool(toolId: string): Promise<ExtensionMessageResponse> {
-  await chrome.tabs.create({ url: backendApi.getArtifactUrl(toolId) })
+  const url = backendApi.getArtifactUrl(toolId)
+
+  try {
+    await chrome.windows.create({
+      url,
+      type: "popup",
+      width: 560,
+      height: 760,
+      focused: true
+    })
+  } catch {
+    await chrome.tabs.create({ url })
+  }
 
   const library = await getLibraryTools()
   const updated = updateLibraryTool(library, toolId, {

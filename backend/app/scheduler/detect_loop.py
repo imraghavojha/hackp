@@ -24,6 +24,7 @@ from backend.app.store.repository import PlatformRepository
 DETECTION_INTERVAL_SECONDS = 120
 MIN_EVENTS_FOR_DETECTION = 50
 MIN_ACTIVITY_WINDOW_SECONDS = 600
+MIN_REPETITIONS_TO_SUGGEST = 3
 
 
 def utc_now() -> str:
@@ -92,6 +93,9 @@ class DetectionScheduler:
             return None
 
         if not detection.get("detected"):
+            self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
+            return None
+        if int(detection.get("repetition_count") or 0) < MIN_REPETITIONS_TO_SUGGEST:
             self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
             return None
 
