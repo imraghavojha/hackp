@@ -1,0 +1,36 @@
+[
+  {
+    "session_id": "sess_domain_a_001",
+    "user_id": "bob",
+    "timestamp": "2026-04-18T09:01:23.456Z",
+    "url": "https://portal.example.com/leads",
+    "event_type": "copy",
+    "target": {
+      "tag": "td",
+      "role": null,
+      "text": "Acme Corp",
+      "aria_label": null
+    },
+    "value": "Acme Corp,Fintech,Series B,85,acme.com",
+    "metadata": {
+      "viewport": [1440, 900]
+    }
+  },
+  {
+    "session_id": "sess_domain_a_001",
+    "user_id": "bob",
+    "timestamp": "2026-04-18T09:02:10.111Z",
+    "url": "https://portal.example.com/leads",
+    "event_type": "file_download",
+    "target": {
+      "tag": "button",
+      "role": "button",
+      "text": "Export CSV",
+      "aria_label": null
+    },
+    "value": "leads.csv",
+    "metadata": {
+      "viewport": [1440, 900]
+    }
+  }
+]
