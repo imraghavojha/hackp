@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Personal Workflow Agent",
+  "version": "0.1.0",
+  "permissions": ["storage", "activeTab", "scripting", "clipboardRead"],
+  "host_permissions": ["http://localhost:8000/*", "https://*/*", "http://*/*"],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Personal Workflow Agent"
+  }
+}

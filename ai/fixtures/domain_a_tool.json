@@ -1,0 +1,31 @@
+{
+  "name": "Lead List Formatter",
+  "description": "Formats lead exports into Bob's preferred spreadsheet output.",
+  "transformation_summary": [
+    "Filter Series B+ rows",
+    "Sort by employee count descending",
+    "Add Bob's outbound tag column"
+  ],
+  "input_spec": {
+    "primary_input": "csv_file",
+    "accepts": ["paste", "file_drop", "file_picker"]
+  },
+  "output_spec": {
+    "format": "xlsx",
+    "filename_pattern": "leads_{YYYY-MM-DD}.xlsx"
+  },
+  "trigger": {
+    "type": "on_url_visit",
+    "url_pattern": "portal.example.com/leads",
+    "prompt": "I built you a tool for this."
+  },
+  "ui_prefs": {
+    "theme": "dark",
+    "density": "compact"
+  },
+  "primitives_used": ["papaparse", "sheetjs"],
+  "programmatic_interface": {
+    "input_type": "csv_string",
+    "output_type": "xlsx_blob"
+  }
+}

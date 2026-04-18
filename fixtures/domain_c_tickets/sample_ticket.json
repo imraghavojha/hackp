@@ -1,0 +1,6 @@
+{
+  "ticket_id": "TICK-1024",
+  "subject": "Refund request after duplicate charge",
+  "message": "Customer says they were charged twice and wants a quick resolution.",
+  "priority": "high"
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tool Shell</title>
+    <style>
+      body {
+        background: #111827;
+        color: #f9fafb;
+        font-family: sans-serif;
+        margin: 0;
+      }
+
+      main {
+        margin: 0 auto;
+        max-width: 860px;
+        padding: 40px 24px;
+      }
+
+      .dropzone,
+      .preview {
+        border: 1px solid #374151;
+        border-radius: 16px;
+        min-height: 120px;
+        padding: 16px;
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Generated Tool</h1>
+      <p>Drop data, preview output, then export.</p>
+      <section class="dropzone">Drop CSV, text, or JSON here.</section>
+      <section class="preview">Preview area</section>
+      <footer>
+        <button id="run-button">Run</button>
+        <button id="download-button">Download</button>
+      </footer>
+    </main>
+
+    <script>
+      window.Tool = window.Tool || {
+        metadata: {
+          id: "tool_stub",
+          name: "Untitled Tool",
+          version: "0.1.0",
+          input_type: "text",
+          output_type: "text"
+        },
+        async transform(input, config = {}) {
+          return input
+        },
+        defaultConfig: {}
+      }
+    </script>
+  </body>
+</html>

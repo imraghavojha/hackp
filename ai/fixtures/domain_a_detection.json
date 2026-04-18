@@ -1,0 +1,14 @@
+{
+  "detected": true,
+  "signature": "sig_domain_a_lead_formatter",
+  "confidence": 0.87,
+  "transformation_name": "Lead List Formatter",
+  "summary": "Turns portal lead exports into a filtered and tagged spreadsheet.",
+  "input_characterization": "csv export from leads portal",
+  "output_characterization": "xlsx with tags and sorted rows",
+  "event_window": {
+    "start": "2026-04-18T09:01:23.456Z",
+    "end": "2026-04-18T09:02:10.111Z"
+  },
+  "repetition_count": 3
+}
