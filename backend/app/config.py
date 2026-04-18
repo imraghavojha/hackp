@@ -8,6 +8,26 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
 
+def _load_env_file() -> None:
+    env_path = ROOT_DIR / ".env"
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", maxsplit=1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+def _bool_from_env(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 @dataclass(frozen=True)
 class Settings:
     db_path: Path
@@ -15,9 +35,12 @@ class Settings:
     seed_tools_path: Path
     runtime_template_path: Path
     ai_base_url: str
+    scheduler_enabled: bool
+    scheduler_interval_seconds: int
 
     @classmethod
     def from_env(cls) -> "Settings":
+        _load_env_file()
         db_path = Path(os.environ.get("PWA_DB_PATH", ROOT_DIR / "backend" / "data" / "platform.sqlite3"))
         artifacts_dir = Path(os.environ.get("PWA_ARTIFACTS_DIR", ROOT_DIR / "backend" / "data" / "artifacts"))
         seed_tools_path = Path(os.environ.get("PWA_SEED_TOOLS_PATH", ROOT_DIR / "fixtures" / "seed" / "tool_registry.json"))
@@ -31,4 +54,6 @@ class Settings:
             seed_tools_path=seed_tools_path,
             runtime_template_path=runtime_template_path,
             ai_base_url=ai_base_url.rstrip("/"),
+            scheduler_enabled=_bool_from_env("PWA_SCHEDULER_ENABLED", True),
+            scheduler_interval_seconds=int(os.environ.get("PWA_SCHEDULER_INTERVAL_SECONDS", "120")),
         )

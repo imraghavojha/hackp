@@ -21,6 +21,7 @@ export type ExtensionMessage =
   | { type: "extension/open-tool"; toolId: string }
   | { type: "extension/list-library" }
   | { type: "extension/get-settings" }
+  | { type: "extension/update-user-id"; userId: string }
   | { type: "extension/update-denylist"; denylist: string[] }
   | { type: "extension/suppress-origin"; origin: string }
   | { type: "extension/tool-feedback"; payload: ToolFeedbackPayload }

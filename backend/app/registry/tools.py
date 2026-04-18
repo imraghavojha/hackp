@@ -33,8 +33,6 @@ class ToolRegistry:
     def ensure_seed_data(self) -> None:
         records = json.loads(Path(self.settings.seed_tools_path).read_text(encoding="utf-8"))
         for raw_tool in records:
-            if self.repository.get_tool(raw_tool["id"]) is not None:
-                continue
             html_artifact = self._read_seed_artifact(raw_tool)
             validation = validate_html_artifact(html_artifact)
             if not validation.is_valid:

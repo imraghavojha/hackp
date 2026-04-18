@@ -1,0 +1,85 @@
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+from ai.config import AiSettings
+
+
+class OpenAICompatibleError(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class OpenAIChatResult:
+    raw_text: str
+    parsed_json: dict
+
+
+def _extract_json_object(text: str) -> dict:
+    cleaned = text.strip()
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise OpenAICompatibleError("Model response did not contain a JSON object")
+
+    try:
+        return json.loads(cleaned[start : end + 1])
+    except json.JSONDecodeError as exc:
+        raise OpenAICompatibleError("Model response JSON could not be parsed") from exc
+
+
+class OpenAICompatibleClient:
+    def __init__(self, settings: AiSettings):
+        self.settings = settings
+
+    def chat_json(self, *, system_prompt: str, user_prompt: str, temperature: float = 0.1, max_tokens: int = 2_000) -> OpenAIChatResult:
+        if not self.settings.live_enabled:
+            raise OpenAICompatibleError("Live AI is not configured")
+
+        payload = {
+            "model": self.settings.model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        request = Request(
+            f"{self.settings.base_url}/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.settings.api_key}",
+            },
+            method="POST",
+        )
+
+        try:
+            with urlopen(request, timeout=self.settings.timeout_seconds) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError) as exc:
+            raise OpenAICompatibleError(str(exc)) from exc
+
+        try:
+            message = body["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise OpenAICompatibleError("OpenAI-compatible response was missing choices[0].message.content") from exc
+
+        if isinstance(message, list):
+            text = "".join(
+                block.get("text", "") if isinstance(block, dict) else str(block)
+                for block in message
+            )
+        else:
+            text = str(message)
+
+        return OpenAIChatResult(raw_text=text, parsed_json=_extract_json_object(text))

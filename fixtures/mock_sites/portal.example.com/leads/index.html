@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lead Export Portal</title>
+    <style>
+      :root { --bg:#f3f4f6; --surface:#ffffff; --fg:#111827; --muted:#6b7280; --border:#d1d5db; --accent:#1d4ed8; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 "IBM Plex Sans", sans-serif; }
+      main { max-width:960px; margin:40px auto; padding:24px; }
+      .shell { background:var(--surface); border:1px solid var(--border); border-radius:18px; box-shadow:0 12px 28px rgba(15,23,42,0.08); overflow:hidden; }
+      header, section { padding:24px; }
+      header { border-bottom:1px solid var(--border); }
+      table { width:100%; border-collapse:collapse; }
+      th, td { padding:12px; border-bottom:1px solid var(--border); text-align:left; }
+      button { border:0; border-radius:999px; padding:11px 16px; background:var(--accent); color:#fff; font-weight:700; cursor:pointer; }
+      .toolbar { display:flex; justify-content:space-between; align-items:center; margin-top:16px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="shell">
+        <header>
+          <h1>Lead Export Portal</h1>
+          <p>Daily outbound leads, filtered by portal analysts and exported for CRM formatting.</p>
+          <div class="toolbar">
+            <span style="color:var(--muted)">Source URL token: portal.example.com/leads</span>
+            <button id="export-button">Export CSV</button>
+          </div>
+        </header>
+        <section>
+          <table>
+            <thead>
+              <tr><th>Company</th><th>Industry</th><th>Stage</th><th>Employees</th><th>Domain</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Acme Corp</td><td>Fintech</td><td>Series B</td><td>140</td><td>acme.com</td></tr>
+              <tr><td>Beta Inc</td><td>Fintech</td><td>Series A</td><td>50</td><td>beta.io</td></tr>
+              <tr><td>Gamma Labs</td><td>Fintech</td><td>Series C</td><td>240</td><td>gammalabs.ai</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+    <script>
+      document.getElementById("export-button").addEventListener("click", async () => {
+        const csv = "company,industry,stage,employees,domain\\nAcme Corp,Fintech,Series B,140,acme.com\\nBeta Inc,Fintech,Series A,50,beta.io\\nGamma Labs,Fintech,Series C,240,gammalabs.ai"
+        await navigator.clipboard.writeText(csv)
+        const blob = new Blob([csv], { type: "text/csv" })
+        const url = URL.createObjectURL(blob)
+        const anchor = document.createElement("a")
+        anchor.href = url
+        anchor.download = "leads.csv"
+        anchor.click()
+        URL.revokeObjectURL(url)
+      })
+    </script>
+  </body>
+</html>

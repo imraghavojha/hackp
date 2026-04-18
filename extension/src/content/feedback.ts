@@ -20,10 +20,10 @@ function ensureFeedbackStyles() {
       font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
     }
     .pwa-feedback {
-      background: rgba(15, 23, 42, 0.94);
-      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.98);
+      color: #111827;
       border: 1px solid rgba(148, 163, 184, 0.22);
-      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
       border-radius: 18px;
       padding: 14px 16px;
       display: grid;
@@ -43,18 +43,19 @@ function ensureFeedbackStyles() {
       cursor: pointer;
     }
     .pwa-feedback__good {
-      background: #22c55e;
-      color: #062712;
+      background: #1d4ed8;
+      color: #ffffff;
     }
     .pwa-feedback__bad {
-      background: #f59e0b;
-      color: #422006;
+      background: #e5e7eb;
+      color: #111827;
+      border: 1px solid rgba(148, 163, 184, 0.24);
     }
     .pwa-feedback textarea {
       min-height: 64px;
       border-radius: 12px;
       border: 1px solid rgba(148, 163, 184, 0.22);
-      background: rgba(15, 23, 42, 0.55);
+      background: #f9fafb;
       color: inherit;
       padding: 10px 12px;
       font: inherit;

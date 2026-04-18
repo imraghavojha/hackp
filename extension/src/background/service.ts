@@ -81,6 +81,12 @@ async function getSettings(): Promise<ExtensionMessageResponse> {
   return { ok: true, settings }
 }
 
+async function updateUserId(userId: string): Promise<ExtensionMessageResponse> {
+  const nextUserId = userId.trim() || "bob"
+  const settings = await updateExtensionSettings({ userId: nextUserId })
+  return { ok: true, settings }
+}
+
 async function updateDenylist(denylist: string[]): Promise<ExtensionMessageResponse> {
   const settings = await updateExtensionSettings({
     denylist: denylist.filter(Boolean).map((entry) => entry.trim()).filter(Boolean)
@@ -134,6 +140,8 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionMessag
       return listLibrary()
     case "extension/get-settings":
       return getSettings()
+    case "extension/update-user-id":
+      return updateUserId(message.userId)
     case "extension/update-denylist":
       return updateDenylist(message.denylist)
     case "extension/suppress-origin":

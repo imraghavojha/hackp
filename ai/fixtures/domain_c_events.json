@@ -1,0 +1,36 @@
+[
+  {
+    "session_id": "sess_domain_c_001",
+    "user_id": "kai",
+    "timestamp": "2026-04-18T09:21:00Z",
+    "url": "https://support.example.com/tickets/123",
+    "event_type": "copy",
+    "target": {
+      "tag": "textarea",
+      "role": null,
+      "text": "Refund request after duplicate charge",
+      "aria_label": null
+    },
+    "value": "{\"ticket\":{\"ticket_id\":\"TICK-1024\",\"subject\":\"Refund request after duplicate charge\"}}",
+    "metadata": {
+      "viewport": [1440, 900]
+    }
+  },
+  {
+    "session_id": "sess_domain_c_001",
+    "user_id": "kai",
+    "timestamp": "2026-04-18T09:22:00Z",
+    "url": "https://support.example.com/tickets/123",
+    "event_type": "paste",
+    "target": {
+      "tag": "textarea",
+      "role": null,
+      "text": "",
+      "aria_label": "Draft reply"
+    },
+    "value": "{\"customer\":{\"name\":\"Jordan Lee\",\"plan\":\"enterprise\"}}",
+    "metadata": {
+      "viewport": [1440, 900]
+    }
+  }
+]

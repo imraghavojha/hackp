@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Support Tickets</title>
+    <style>
+      :root { --bg:#f3f4f6; --surface:#ffffff; --fg:#111827; --muted:#6b7280; --border:#d1d5db; --accent:#1d4ed8; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 "IBM Plex Sans", sans-serif; }
+      main { max-width:960px; margin:40px auto; padding:24px; }
+      .shell { background:var(--surface); border:1px solid var(--border); border-radius:18px; box-shadow:0 12px 28px rgba(15,23,42,0.08); overflow:hidden; }
+      header, section { padding:24px; }
+      header { border-bottom:1px solid var(--border); }
+      textarea { width:100%; min-height:160px; box-sizing:border-box; border-radius:12px; border:1px solid var(--border); padding:12px; font:inherit; }
+      button { margin-top:16px; border:0; border-radius:999px; padding:11px 16px; background:var(--accent); color:#fff; font-weight:700; cursor:pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="shell">
+        <header>
+          <h1>Support Tickets</h1>
+          <p>Customer issue thread with ticket and account context.</p>
+        </header>
+        <section>
+          <textarea id="ticket-json">{"ticket":{"ticket_id":"TICK-1024","subject":"Refund request after duplicate charge","message":"Customer says they were charged twice and wants a quick resolution.","priority":"high"},"customer":{"customer_id":"cust_9182","name":"Jordan Lee","plan":"enterprise","sentiment":"frustrated","last_order_date":"2026-04-14"}}</textarea>
+          <button id="copy-button">Copy Ticket Context</button>
+        </section>
+      </div>
+    </main>
+    <script>
+      document.getElementById("copy-button").addEventListener("click", async () => {
+        await navigator.clipboard.writeText(document.getElementById("ticket-json").value)
+      })
+    </script>
+  </body>
+</html>

@@ -32,8 +32,8 @@
       "output_type": "xlsx_blob"
     },
     "ui_prefs": {
-      "theme": "dark",
-      "density": "compact",
+      "theme": "light",
+      "density": "comfortable",
       "primary_label": "Format My Leads",
       "show_preview": true
     }
@@ -68,8 +68,8 @@
       "output_type": "html"
     },
     "ui_prefs": {
-      "theme": "dark",
-      "density": "compact",
+      "theme": "light",
+      "density": "comfortable",
       "primary_label": "Build Brief",
       "show_preview": true
     },
@@ -105,8 +105,8 @@
       "output_type": "text"
     },
     "ui_prefs": {
-      "theme": "dark",
-      "density": "compact",
+      "theme": "light",
+      "density": "comfortable",
       "primary_label": "Draft Reply",
       "show_preview": true
     },

@@ -1,0 +1,14 @@
+{
+  "detected": true,
+  "signature": "sig_domain_b_market_brief",
+  "confidence": 0.79,
+  "transformation_name": "Market Brief Builder",
+  "summary": "Turns a repeated ticker review into a compact watchlist brief.",
+  "input_characterization": "Ticker list plus market data JSON",
+  "output_characterization": "Copy-ready HTML watchlist brief",
+  "event_window": {
+    "start": "2026-04-18T09:11:00Z",
+    "end": "2026-04-18T09:12:00Z"
+  },
+  "repetition_count": 2
+}

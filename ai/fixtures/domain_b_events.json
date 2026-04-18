@@ -1,0 +1,36 @@
+[
+  {
+    "session_id": "sess_domain_b_001",
+    "user_id": "maya",
+    "timestamp": "2026-04-18T09:11:00Z",
+    "url": "https://research.example.com/tickers",
+    "event_type": "copy",
+    "target": {
+      "tag": "textarea",
+      "role": null,
+      "text": "AAPL\nMSFT\nNVDA",
+      "aria_label": null
+    },
+    "value": "AAPL\nMSFT\nNVDA",
+    "metadata": {
+      "viewport": [1440, 900]
+    }
+  },
+  {
+    "session_id": "sess_domain_b_001",
+    "user_id": "maya",
+    "timestamp": "2026-04-18T09:12:00Z",
+    "url": "https://research.example.com/tickers",
+    "event_type": "paste",
+    "target": {
+      "tag": "textarea",
+      "role": null,
+      "text": "",
+      "aria_label": "Market brief"
+    },
+    "value": "{\"tickers\":[\"AAPL\",\"MSFT\",\"NVDA\"]}",
+    "metadata": {
+      "viewport": [1440, 900]
+    }
+  }
+]
