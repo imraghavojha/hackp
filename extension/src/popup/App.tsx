@@ -16,6 +16,7 @@ export function PopupApp() {
   const [matchingTools, setMatchingTools] = useState<ToolRecord[]>([])
   const [libraryTools, setLibraryTools] = useState<CachedToolEntry[]>([])
   const [settings, setSettings] = useState<ExtensionSettings | null>(null)
+  const [userIdValue, setUserIdValue] = useState("")
   const [denylistValue, setDenylistValue] = useState("")
   const [status, setStatus] = useState("Loading extension state...")
 
@@ -28,6 +29,7 @@ export function PopupApp() {
 
       if (settingsResponse.ok && settingsResponse.settings) {
         setSettings(settingsResponse.settings)
+        setUserIdValue(settingsResponse.settings.userId)
         setDenylistValue(settingsResponse.settings.denylist.join("\n"))
       }
 
@@ -91,6 +93,30 @@ export function PopupApp() {
       setStatus("Saved privacy denylist.")
     } else {
       setStatus("Couldn't save privacy denylist.")
+    }
+  }
+
+  async function handleSaveUserId() {
+    const response = await sendExtensionMessage({
+      type: "extension/update-user-id",
+      userId: userIdValue
+    })
+
+    if (response.ok && response.settings) {
+      setSettings(response.settings)
+      setStatus(`Switched active worker to ${response.settings.userId}.`)
+      const currentUrl = await getCurrentTabUrl()
+      if (currentUrl) {
+        const toolsResponse = await sendExtensionMessage({
+          type: "extension/fetch-tools-for-url",
+          url: currentUrl
+        })
+        if (toolsResponse.ok && toolsResponse.tools) {
+          setMatchingTools(toolsResponse.tools)
+        }
+      }
+    } else {
+      setStatus("Couldn't switch active worker.")
     }
   }
 
@@ -164,6 +190,42 @@ export function PopupApp() {
             ))
           )}
         </div>
+      </section>
+
+      <section style={{ marginTop: 16 }}>
+        <h2 style={{ margin: "0 0 8px", fontSize: "0.95rem" }}>Worker</h2>
+        <p style={{ margin: "0 0 8px", color: "#6b7280", fontSize: "0.84rem" }}>
+          Use `bob`, `maya`, or `kai` to test the seeded personas.
+        </p>
+        <input
+          value={userIdValue}
+          onChange={(event) => setUserIdValue(event.target.value)}
+          style={{
+            width: "100%",
+            height: 42,
+            boxSizing: "border-box",
+            borderRadius: 12,
+            border: "1px solid rgba(148, 163, 184, 0.22)",
+            background: "#ffffff",
+            color: "#111827",
+            padding: "0 12px",
+            font: '14px/1.4 "IBM Plex Sans", sans-serif'
+          }}
+        />
+        <button
+          onClick={() => void handleSaveUserId()}
+          style={{
+            marginTop: 10,
+            border: 0,
+            borderRadius: 999,
+            background: "#111827",
+            color: "#ffffff",
+            padding: "10px 14px",
+            fontWeight: 700,
+            cursor: "pointer"
+          }}>
+          Save worker
+        </button>
       </section>
 
       <section style={{ marginTop: 16 }}>
