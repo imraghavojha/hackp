@@ -1,5 +1,5 @@
-import type { ToolSummary } from "../types/tools"
+import type { ToolRecord } from "../types/tools"
 
-export function pickSuggestedTool(url: string, tools: ToolSummary[]): ToolSummary | null {
-  return tools.find((tool) => url.includes(tool.trigger.url_pattern)) ?? null
+export function pickSuggestedTool(_url: string, tools: ToolRecord[]): ToolRecord | null {
+  return tools[0] ?? null
 }

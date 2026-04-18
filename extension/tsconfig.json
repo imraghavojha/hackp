@@ -7,7 +7,16 @@
     "strict": true,
     "baseUrl": ".",
     "allowJs": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
+    "types": []
   },
-  "include": ["src/**/*"]
+  "include": [
+    ".plasmo/index.d.ts",
+    "src/**/*"
+  ]
 }

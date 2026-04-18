@@ -1,5 +1,5 @@
-import { backendApi } from "../background/api"
+import { sendExtensionMessage } from "../lib/messaging"
 
-export function getArtifactUrl(toolId: string): string {
-  return backendApi.getArtifactUrl(toolId)
+export async function openTool(toolId: string) {
+  return sendExtensionMessage({ type: "extension/open-tool", toolId })
 }
