@@ -32,7 +32,7 @@ def _bool_from_env(name: str, default: bool) -> bool:
 
 @dataclass(frozen=True)
 class AiSettings:
-    provider: Literal["openai", "gemini"]
+    provider: Literal["openai", "gemini", "k2"]
     mode: Literal["heuristic", "live", "hybrid"]
     api_key: str | None
     base_url: str
@@ -52,8 +52,13 @@ def get_ai_settings() -> AiSettings:
     _load_env_file()
 
     provider = os.environ.get("PWA_AI_PROVIDER", "").strip().lower()
-    if provider not in {"openai", "gemini"}:
-        provider = "gemini" if os.environ.get("GEMINI_API_KEY") else "openai"
+    if provider not in {"openai", "gemini", "k2"}:
+        if os.environ.get("K2_API_KEY"):
+            provider = "k2"
+        elif os.environ.get("GEMINI_API_KEY"):
+            provider = "gemini"
+        else:
+            provider = "openai"
 
     mode = os.environ.get("PWA_AI_MODE", "hybrid").strip().lower()
     if mode not in {"heuristic", "live", "hybrid"}:
@@ -63,7 +68,11 @@ def get_ai_settings() -> AiSettings:
     if mem0_mode not in {"local", "remote", "hybrid"}:
         mem0_mode = "local"
 
-    if provider == "gemini":
+    if provider == "k2":
+        api_key = os.environ.get("K2_API_KEY")
+        base_url = os.environ.get("K2_BASE_URL", "https://api.k2think.ai/v1").rstrip("/")
+        model = os.environ.get("K2_MODEL", "MBZUAI-IFM/K2-Think-v2")
+    elif provider == "gemini":
         api_key = os.environ.get("GEMINI_API_KEY")
         base_url = os.environ.get("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta").rstrip("/")
         model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")

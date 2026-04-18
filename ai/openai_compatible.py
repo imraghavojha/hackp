@@ -22,21 +22,34 @@ class OpenAIChatResult:
 
 
 def _extract_json_object(text: str) -> dict:
-    cleaned = text.strip()
+    cleaned = text.strip().replace("```json", "").replace("```", "").strip()
+    if "</think>" in cleaned:
+        cleaned = cleaned.rsplit("</think>", maxsplit=1)[-1].strip()
+    else:
+        cleaned = cleaned.replace("</think>", "").strip()
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
         pass
 
-    start = cleaned.find("{")
-    end = cleaned.rfind("}")
-    if start == -1 or end == -1 or end <= start:
-        raise OpenAICompatibleError("Model response did not contain a JSON object")
+    decoder = json.JSONDecoder()
+    search_from = 0
+    while True:
+        start = cleaned.find("{", search_from)
+        if start == -1:
+            break
 
-    try:
-        return json.loads(cleaned[start : end + 1])
-    except json.JSONDecodeError as exc:
-        raise OpenAICompatibleError("Model response JSON could not be parsed") from exc
+        try:
+            candidate, _ = decoder.raw_decode(cleaned[start:])
+        except json.JSONDecodeError:
+            search_from = start + 1
+            continue
+
+        if isinstance(candidate, dict):
+            return candidate
+        search_from = start + 1
+
+    raise OpenAICompatibleError("Model response did not contain a valid JSON object")
 
 
 class OpenAICompatibleClient:

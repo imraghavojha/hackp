@@ -46,7 +46,7 @@ async function queueEvents(events: ObservedEvent[]): Promise<ExtensionMessageRes
   await setQueuedEvents(next)
 
   const hasImportantSignal = events.some((event) =>
-    ["copy", "paste", "submit", "file_download", "navigation"].includes(event.event_type)
+    ["copy", "paste", "input", "select", "submit", "file_download", "navigation"].includes(event.event_type)
   )
 
   if (next.length >= MAX_BUFFERED_EVENTS || hasImportantSignal) {

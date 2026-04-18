@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from urllib.parse import urlparse
 from typing import Any
 
 from ai.config import get_ai_settings
@@ -12,6 +13,7 @@ from ai.fallbacks import (
     classify_domain_from_events,
     domain_from_signature,
     heuristic_generate_response,
+    infer_repetition_count,
 )
 from ai.mem0_wrapper.client import (
     build_preferences_block,
@@ -21,13 +23,16 @@ from ai.mem0_wrapper.client import (
     infer_theme,
 )
 from ai.gemini_client import GeminiClient
+from ai.k2_client import K2Client
 from ai.openai_compatible import OpenAICompatibleClient, OpenAICompatibleError
-from ai.prompts.detect import DETECT_SYSTEM_PROMPT
+from ai.prompts.detect import DETECT_SYSTEM_PROMPT, GENERIC_DETECT_SYSTEM_PROMPT
 from ai.prompts.generate import GENERATE_SYSTEM_PROMPT
 
 
 def _get_live_client():
     settings = get_ai_settings()
+    if settings.provider == "k2":
+        return K2Client(settings)
     if settings.provider == "gemini":
         return GeminiClient(settings)
     return OpenAICompatibleClient(settings)
@@ -36,8 +41,12 @@ def _get_live_client():
 def detect_transformation(payload: dict[str, Any]) -> dict[str, Any]:
     request = DetectionRequest.model_validate(payload)
     domain = classify_domain_from_events(request.events)
+    settings = get_ai_settings()
+    events_json = [event.model_dump(mode="json") for event in request.events]
     if domain is None:
-        return {"detected": False}
+        if len(events_json) < 3:
+            return {"detected": False}
+        return _generic_activity_analysis(events_json, settings)
 
     signature = DOMAIN_DEFINITIONS[domain]["signature"]
     if signature in request.existing_tool_signatures:
@@ -47,8 +56,7 @@ def detect_transformation(payload: dict[str, Any]) -> dict[str, Any]:
     if len(critical_events) < 2:
         return {"detected": False}
 
-    heuristic = build_detection_response(domain=domain, events=[event.model_dump(mode="json") for event in request.events], confidence=0.78)
-    settings = get_ai_settings()
+    heuristic = build_detection_response(domain=domain, events=events_json, confidence=0.78)
     if settings.mode == "heuristic" or not settings.live_enabled:
         return heuristic
 
@@ -65,7 +73,7 @@ def detect_transformation(payload: dict[str, Any]) -> dict[str, Any]:
             return {"detected": False}
         return build_detection_response(
             domain=domain,
-            events=[event.model_dump(mode="json") for event in request.events],
+            events=events_json,
             confidence=float(parsed.get("confidence", heuristic["confidence"])),
             summary=str(parsed.get("summary") or heuristic["summary"]),
         ) | {
@@ -140,6 +148,16 @@ def _build_detect_prompt(*, domain: str, payload: dict[str, Any]) -> str:
     )
 
 
+def _build_generic_detect_prompt(payload: dict[str, Any]) -> str:
+    return (
+        "You are analyzing generic browser activity.\n"
+        "Summarize what the user appears to be doing on the current page.\n"
+        "Do not invent productivity if the behavior looks exploratory.\n"
+        "Return JSON only with keys: detected, confidence, summary, input_characterization, output_characterization, repetition_count.\n\n"
+        f"Payload:\n{json.dumps(payload, indent=2)}"
+    )
+
+
 def _build_generate_prompt(*, domain: str, detection: dict[str, Any], events: list[dict[str, Any]], preferences_block: str) -> str:
     definition = DOMAIN_DEFINITIONS[domain]
     return (
@@ -188,3 +206,55 @@ def _normalize_blueprint(
         },
         "default_config": default_config,
     }
+
+
+def _generic_activity_analysis(events: list[dict[str, Any]], settings) -> dict[str, Any]:
+    current_url = str(events[-1]["url"])
+    parsed_url = urlparse(current_url)
+    host = parsed_url.netloc or current_url
+    repetition_count = max(1, infer_repetition_count(events))
+    heuristic = {
+        "detected": True,
+        "signature": None,
+        "confidence": 0.62,
+        "transformation_name": "Observed browser activity",
+        "summary": f"Bob appears to be reading and interacting with content on {host} as part of a repeated browser workflow.",
+        "input_characterization": "Browser page content and copied/pasted text",
+        "output_characterization": "No dedicated helper generated yet; activity captured for analysis",
+        "event_window": {
+            "start": events[0]["timestamp"],
+            "end": events[-1]["timestamp"],
+        },
+        "repetition_count": repetition_count,
+    }
+    if settings.mode == "heuristic" or not settings.live_enabled:
+        return heuristic
+
+    client = _get_live_client()
+    try:
+        result = client.chat_json(
+            system_prompt=GENERIC_DETECT_SYSTEM_PROMPT,
+            user_prompt=_build_generic_detect_prompt(
+                {
+                    "user_id": events[0]["user_id"],
+                    "events": events[-12:],
+                    "existing_tool_signatures": [],
+                }
+            ),
+            temperature=0.0,
+            max_tokens=500,
+        )
+        parsed = result.parsed_json
+        return {
+            "detected": True,
+            "signature": None,
+            "confidence": float(parsed.get("confidence", heuristic["confidence"])),
+            "transformation_name": "Observed browser activity",
+            "summary": str(parsed.get("summary") or heuristic["summary"]),
+            "input_characterization": str(parsed.get("input_characterization") or heuristic["input_characterization"]),
+            "output_characterization": str(parsed.get("output_characterization") or heuristic["output_characterization"]),
+            "event_window": heuristic["event_window"],
+            "repetition_count": max(repetition_count, int(parsed.get("repetition_count", heuristic["repetition_count"]))),
+        }
+    except (OpenAICompatibleError, ValueError, TypeError, KeyError, json.JSONDecodeError):
+        return heuristic

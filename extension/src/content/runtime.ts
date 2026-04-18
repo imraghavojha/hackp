@@ -20,20 +20,30 @@ interface ObserverContext {
   currentToast: { dispose: () => void } | null
   currentHelper: { dispose: () => void } | null
   lastSuggestionKey: string | null
-  pollTimerId: number | null
   repeatedActionCount: number
+  refreshTimers: Set<number>
+  refreshInFlight: boolean
 }
+
+let fallbackSessionId: string | null = null
 
 function createSessionId(): string {
   const storageKey = "pwa_extension_session_id"
-  const existing = sessionStorage.getItem(storageKey)
-  if (existing) {
-    return existing
-  }
+  try {
+    const existing = sessionStorage.getItem(storageKey)
+    if (existing) {
+      return existing
+    }
 
-  const value = crypto.randomUUID()
-  sessionStorage.setItem(storageKey, value)
-  return value
+    const value = crypto.randomUUID()
+    sessionStorage.setItem(storageKey, value)
+    return value
+  } catch {
+    if (fallbackSessionId === null) {
+      fallbackSessionId = crypto.randomUUID()
+    }
+    return fallbackSessionId
+  }
 }
 
 function buildMetadata(context: ObserverContext, extra: Record<string, unknown> = {}): Record<string, unknown> {
@@ -87,7 +97,60 @@ function inferClickEventType(target: EventTarget | null): ObservedEvent["event_t
   return "click"
 }
 
-async function refreshSuggestion(context: ObserverContext, reason: string) {
+function findNavigatingAnchor(target: EventTarget | null): HTMLAnchorElement | null {
+  if (!(target instanceof Element)) {
+    return null
+  }
+
+  const anchor = target.closest("a[href]")
+  return anchor instanceof HTMLAnchorElement ? anchor : null
+}
+
+function clearScheduledRefreshes(context: ObserverContext) {
+  for (const timerId of context.refreshTimers) {
+    globalThis.clearTimeout(timerId)
+  }
+  context.refreshTimers.clear()
+}
+
+function scheduleRefreshBurst(
+  context: ObserverContext,
+  reason: string,
+  options: {
+    recordPageVisit?: boolean
+    delays?: number[]
+  } = {}
+) {
+  const delays = options.delays ?? [0]
+  clearScheduledRefreshes(context)
+
+  for (const delay of delays) {
+    const timerId = globalThis.setTimeout(() => {
+      context.refreshTimers.delete(timerId)
+      void refreshSuggestion(context, {
+        reason,
+        recordPageVisit: Boolean(options.recordPageVisit && delay === delays[0])
+      })
+    }, delay)
+    context.refreshTimers.add(timerId)
+  }
+}
+
+async function refreshSuggestion(
+  context: ObserverContext,
+  options: {
+    reason: string
+    recordPageVisit?: boolean
+  }
+) {
+  if (context.refreshInFlight) {
+    return
+  }
+
+  context.refreshInFlight = true
+
+  try {
+    if (options.recordPageVisit) {
   const event = buildObservedEvent(
     {
       session_id: context.sessionId,
@@ -101,83 +164,87 @@ async function refreshSuggestion(context: ObserverContext, reason: string) {
         text: document.title,
         aria_label: null
       },
-      metadata: buildMetadata(context, { reason })
+      metadata: buildMetadata(context, { reason: options.reason })
     },
     window.location.href
   )
 
-  if (event) {
-    await queueObservedEvent(event)
-  }
+    if (event) {
+      await queueObservedEvent(event)
+    }
+    }
 
-  const settings = await getExtensionSettings()
-  if (isDeniedUrl(window.location.href, settings.denylist) || settings.suppressedOrigins.includes(window.location.origin)) {
-    context.currentToast?.dispose()
-    context.currentToast = null
-    return
-  }
+    const settings = await getExtensionSettings()
+    if (isDeniedUrl(window.location.href, settings.denylist) || settings.suppressedOrigins.includes(window.location.origin)) {
+      context.currentToast?.dispose()
+      context.currentToast = null
+      return
+    }
 
-  const response = await sendExtensionMessage({
-    type: "extension/fetch-tools-for-url",
-    url: window.location.href,
-    allowSeedFallback: context.repeatedActionCount >= 3
-  })
-  const analysisResponse = await sendExtensionMessage({
-    type: "extension/fetch-analysis-for-url",
-    url: window.location.href
-  })
-  const analysis = analysisResponse.ok ? analysisResponse.analysis ?? null : null
-
-  if (!response.ok || !response.tools || response.tools.length === 0) {
-    context.currentToast?.dispose()
-    context.currentToast = null
-    return
-  }
-
-  const tool = pickSuggestedTool(window.location.href, response.tools)
-  if (!tool) {
-    return
-  }
-
-  const suggestionKey = [
-    tool.id,
-    analysis?.id ?? "no-analysis",
-    analysis?.repetition_count ?? context.repeatedActionCount,
-    window.location.href
-  ].join("::")
-  if (context.lastSuggestionKey === suggestionKey && context.currentToast) {
-    return
-  }
-  context.lastSuggestionKey = suggestionKey
-
-  context.currentToast?.dispose()
-  globalThis.setTimeout(() => {
-    const effectiveAnalysis =
-      analysis ??
-      (context.repeatedActionCount >= 3
-        ? {
-            id: 0,
-            user_id: context.userId,
-            url: window.location.href,
-            signature: tool.signature ?? null,
-            transformation_name: tool.name,
-            summary: "I noticed you repeating the same workflow on this page.",
-            confidence: null,
-            repetition_count: context.repeatedActionCount,
-            event_window: { start: null, end: null },
-            status: "observed",
-            tool_id: tool.id,
-            created_at: new Date().toISOString()
-          }
-        : null)
-
-    context.currentToast = showSuggestionToast(tool, window.location.origin, effectiveAnalysis, () => {
-      void showInlineHelper(tool, effectiveAnalysis).then((handle) => {
-        context.currentHelper?.dispose()
-        context.currentHelper = handle
-      })
+    const response = await sendExtensionMessage({
+      type: "extension/fetch-tools-for-url",
+      url: window.location.href,
+      allowSeedFallback: context.repeatedActionCount >= 3
     })
-  }, POPUP_DELAY_MS)
+    const analysisResponse = await sendExtensionMessage({
+      type: "extension/fetch-analysis-for-url",
+      url: window.location.href
+    })
+    const analysis = analysisResponse.ok ? analysisResponse.analysis ?? null : null
+
+    if (!response.ok || !response.tools || response.tools.length === 0) {
+      context.currentToast?.dispose()
+      context.currentToast = null
+      return
+    }
+
+    const tool = pickSuggestedTool(window.location.href, response.tools)
+    if (!tool) {
+      return
+    }
+
+    const suggestionKey = [
+      tool.id,
+      analysis?.id ?? "no-analysis",
+      analysis?.repetition_count ?? context.repeatedActionCount,
+      window.location.href
+    ].join("::")
+    if (context.lastSuggestionKey === suggestionKey && context.currentToast) {
+      return
+    }
+    context.lastSuggestionKey = suggestionKey
+
+    context.currentToast?.dispose()
+    globalThis.setTimeout(() => {
+      const effectiveAnalysis =
+        analysis ??
+        (context.repeatedActionCount >= 3
+          ? {
+              id: 0,
+              user_id: context.userId,
+              url: window.location.href,
+              signature: tool.signature ?? null,
+              transformation_name: tool.name,
+              summary: "I noticed you repeating the same workflow on this page.",
+              confidence: null,
+              repetition_count: context.repeatedActionCount,
+              event_window: { start: null, end: null },
+              status: "observed",
+              tool_id: tool.id,
+              created_at: new Date().toISOString()
+            }
+          : null)
+
+      context.currentToast = showSuggestionToast(tool, window.location.origin, effectiveAnalysis, () => {
+        void showInlineHelper(tool, effectiveAnalysis).then((handle) => {
+          context.currentHelper?.dispose()
+          context.currentHelper = handle
+        })
+      })
+    }, POPUP_DELAY_MS)
+  } finally {
+    context.refreshInFlight = false
+  }
 }
 
 function observeHistory(onChange: (reason: string) => void) {
@@ -255,8 +322,9 @@ export async function bootstrapContentObserver(): Promise<void> {
     currentToast: null,
     currentHelper: null,
     lastSuggestionKey: null,
-    pollTimerId: null,
-    repeatedActionCount: 0
+    repeatedActionCount: 0,
+    refreshTimers: new Set<number>(),
+    refreshInFlight: false
   }
 
   const enqueueRawEvent = async (
@@ -291,7 +359,13 @@ export async function bootstrapContentObserver(): Promise<void> {
       }
       await queueObservedEvent(observed)
       if (context.repeatedActionCount >= 3) {
-        void refreshSuggestion(context, "local-threshold")
+        scheduleRefreshBurst(context, "local-threshold", {
+          delays: [2_500, 5_500]
+        })
+      } else if (["copy", "paste", "input", "select", "submit", "file_download"].includes(eventType)) {
+        scheduleRefreshBurst(context, `${eventType}-activity`, {
+          delays: [2_500]
+        })
       }
     }
   }
@@ -367,9 +441,36 @@ export async function bootstrapContentObserver(): Promise<void> {
   )
 
   document.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (isExtensionOwnedTarget(event.target)) {
+        return
+      }
+
+      const anchor = findNavigatingAnchor(event.target)
+      if (!anchor) {
+        return
+      }
+
+      const target = buildTarget(anchor)
+      const descriptor = [target.text, target.aria_label, anchor.href].filter(Boolean).join(" ").trim()
+      void enqueueRawEvent("click", target, descriptor, {
+        metadata: {
+          phase: "pointerdown"
+        }
+      })
+    },
+    true
+  )
+
+  document.addEventListener(
     "click",
     (event) => {
       if (isExtensionOwnedTarget(event.target)) {
+        return
+      }
+
+      if (findNavigatingAnchor(event.target)) {
         return
       }
 
@@ -387,18 +488,26 @@ export async function bootstrapContentObserver(): Promise<void> {
     context.currentHelper = null
     context.lastSuggestionKey = null
     context.repeatedActionCount = 0
-    void refreshSuggestion(context, reason)
+    scheduleRefreshBurst(context, reason, {
+      recordPageVisit: true,
+      delays: [0, 2_500, 5_500]
+    })
   })
 
   window.addEventListener("beforeunload", () => {
+    clearScheduledRefreshes(context)
     context.currentHelper?.dispose()
     context.currentHelper = null
-    void refreshSuggestion(context, "beforeunload")
   })
 
-  context.pollTimerId = globalThis.setInterval(() => {
-    void refreshSuggestion(context, "poll")
-  }, 5_000)
+  window.addEventListener("focus", () => {
+    scheduleRefreshBurst(context, "window-focus", {
+      delays: [0]
+    })
+  })
 
-  await refreshSuggestion(context, "initial-load")
+  scheduleRefreshBurst(context, "initial-load", {
+    recordPageVisit: true,
+    delays: [0, 2_500, 5_500]
+  })
 }

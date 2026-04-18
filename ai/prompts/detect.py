@@ -20,3 +20,27 @@ JSON shape:
   "repetition_count": number
 }
 """
+
+
+GENERIC_DETECT_SYSTEM_PROMPT = """
+You analyze generic browser activity for a single user.
+
+Your job is to describe what the user appears to be doing on the current page
+without forcing the behavior into one of the seeded demo workflows.
+
+Rules:
+- Focus on the actual browsing and text-manipulation behavior shown by the events.
+- Do not invent productivity if the behavior looks exploratory or casual.
+- If the user is copying, pasting, typing, or submitting, describe that plainly.
+- Return JSON only.
+
+JSON shape:
+{
+  "detected": boolean,
+  "confidence": number,
+  "summary": string,
+  "input_characterization": string,
+  "output_characterization": string,
+  "repetition_count": number
+}
+"""

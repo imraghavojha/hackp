@@ -20,6 +20,8 @@ export function PopupApp() {
   const [status, setStatus] = useState("Loading extension state...")
 
   useEffect(() => {
+    const retryTimeouts = new Set<number>()
+
     void (async () => {
       const [settingsResponse, libraryResponse] = await Promise.all([
         sendExtensionMessage({ type: "extension/get-settings" }),
@@ -36,35 +38,65 @@ export function PopupApp() {
 
       const currentUrl = await getCurrentTabUrl()
       if (currentUrl) {
-        const [toolsResponse, analysisResponse] = await Promise.all([
-          sendExtensionMessage({
-            type: "extension/fetch-tools-for-url",
-            url: currentUrl
-          }),
-          sendExtensionMessage({
-            type: "extension/fetch-analysis-for-url",
-            url: currentUrl
-          })
-        ])
+        const retryDelays = [2_500, 5_500]
+        let retryIndex = 0
 
-        if (toolsResponse.ok && toolsResponse.tools) {
-          setMatchingTools(toolsResponse.tools)
-          setStatus(
-            toolsResponse.tools.length > 0
-              ? `Found ${toolsResponse.tools.length} tool suggestion(s) for this page.`
-              : "No matching tools for this page yet."
-          )
-        } else {
-          setStatus("Couldn't fetch tools for the current page.")
+        const loadCurrentPageState = async () => {
+          const [toolsResponse, analysisResponse] = await Promise.all([
+            sendExtensionMessage({
+              type: "extension/fetch-tools-for-url",
+              url: currentUrl
+            }),
+            sendExtensionMessage({
+              type: "extension/fetch-analysis-for-url",
+              url: currentUrl
+            })
+          ])
+
+          if (toolsResponse.ok && toolsResponse.tools) {
+            setMatchingTools(toolsResponse.tools)
+            setStatus(
+              toolsResponse.tools.length > 0
+                ? `Found ${toolsResponse.tools.length} tool suggestion(s) for this page.`
+                : analysisResponse.ok && analysisResponse.analysis
+                  ? "Analysis is ready for this page, but there is no helper suggestion yet."
+                  : "Analyzing this page..."
+            )
+          } else {
+            setStatus("Couldn't fetch tools for the current page.")
+          }
+
+          if (analysisResponse.ok) {
+            setCurrentAnalysis(analysisResponse.analysis ?? null)
+          }
+
+          if (
+            (!toolsResponse.ok || toolsResponse.tools?.length === 0) &&
+            (!analysisResponse.ok || analysisResponse.analysis === null) &&
+            retryIndex < retryDelays.length
+          ) {
+            const delay = retryDelays[retryIndex]
+            retryIndex += 1
+            const timeoutId = window.setTimeout(() => {
+              retryTimeouts.delete(timeoutId)
+              void loadCurrentPageState()
+            }, delay)
+            retryTimeouts.add(timeoutId)
+          }
         }
 
-        if (analysisResponse.ok) {
-          setCurrentAnalysis(analysisResponse.analysis ?? null)
-        }
+        await loadCurrentPageState()
       } else {
         setStatus("Open a regular browser tab to see matching tools.")
       }
     })()
+
+    return () => {
+      for (const timeoutId of retryTimeouts) {
+        window.clearTimeout(timeoutId)
+      }
+      retryTimeouts.clear()
+    }
   }, [])
 
   const combinedTools = useMemo(() => {

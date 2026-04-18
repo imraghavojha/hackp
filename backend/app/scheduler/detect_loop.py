@@ -103,6 +103,35 @@ class DetectionScheduler:
             return None
 
         latest_url = str(pending_events[-1]["url"])
+        if not detection.get("signature"):
+            summary = str(detection.get("summary") or "Observed browser activity.")
+            repetition_count = int(detection.get("repetition_count") or 1)
+            event_window = detection.get("event_window") or {}
+            latest_analysis = self.repository.latest_analysis_for_url(user_id, latest_url)
+            if not (
+                latest_analysis
+                and latest_analysis.signature is None
+                and latest_analysis.status == "generic"
+                and latest_analysis.summary == summary
+                and latest_analysis.repetition_count == repetition_count
+                and latest_analysis.event_window.start == event_window.get("start")
+                and latest_analysis.event_window.end == event_window.get("end")
+            ):
+                self.repository.create_analysis(
+                    user_id=user_id,
+                    url=latest_url,
+                    signature=None,
+                    transformation_name=detection.get("transformation_name"),
+                    summary=summary,
+                    confidence=float(detection.get("confidence")) if detection.get("confidence") is not None else None,
+                    repetition_count=repetition_count,
+                    event_window=event_window,
+                    status="generic",
+                    tool_id=None,
+                )
+            self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
+            return None
+
         repetition_count = int(detection.get("repetition_count") or 0)
         analysis_status = "observed"
         analysis_tool_id: str | None = None
