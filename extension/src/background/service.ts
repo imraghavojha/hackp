@@ -7,6 +7,7 @@ import type { EventsBatchRequest, ObservedEvent } from "../types/events"
 import type { ExtensionMessage, ExtensionMessageResponse, ToolFeedbackPayload } from "../types/messages"
 
 let flushInProgress = false
+let flushTimeoutId: number | null = null
 
 async function flushEvents(): Promise<void> {
   if (flushInProgress) {
@@ -44,6 +45,20 @@ async function queueEvents(events: ObservedEvent[]): Promise<ExtensionMessageRes
   const next = [...queuedEvents, ...events]
   await setQueuedEvents(next)
 
+  const hasImportantSignal = events.some((event) =>
+    ["copy", "paste", "submit", "file_download", "navigation"].includes(event.event_type)
+  )
+
+  if (next.length >= MAX_BUFFERED_EVENTS || hasImportantSignal) {
+    if (flushTimeoutId !== null) {
+      globalThis.clearTimeout(flushTimeoutId)
+    }
+    flushTimeoutId = globalThis.setTimeout(() => {
+      void flushEvents()
+      flushTimeoutId = null
+    }, 2_000)
+  }
+
   if (next.length >= MAX_BUFFERED_EVENTS) {
     await flushEvents()
   }
@@ -51,13 +66,19 @@ async function queueEvents(events: ObservedEvent[]): Promise<ExtensionMessageRes
   return { ok: true, accepted: events.length, buffered: next.length }
 }
 
-async function fetchToolsForUrl(url: string): Promise<ExtensionMessageResponse> {
+async function fetchToolsForUrl(url: string, allowSeedFallback = false): Promise<ExtensionMessageResponse> {
   const settings = await getExtensionSettings()
-  const tools = await backendApi.getToolsForUrl(url, settings.userId)
+  const tools = await backendApi.getToolsForUrl(url, settings.userId, allowSeedFallback)
   const library = await getLibraryTools()
   const merged = upsertLibraryTools(library, tools, url, new Date().toISOString())
   await setLibraryTools(sortLibraryTools(merged))
   return { ok: true, tools }
+}
+
+async function fetchAnalysisForUrl(url: string): Promise<ExtensionMessageResponse> {
+  const settings = await getExtensionSettings()
+  const analysis = await backendApi.getAnalysisForUrl(url, settings.userId)
+  return { ok: true, analysis }
 }
 
 async function openTool(toolId: string): Promise<ExtensionMessageResponse> {
@@ -145,7 +166,9 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionMessag
     case "extension/queue-events":
       return queueEvents(message.events)
     case "extension/fetch-tools-for-url":
-      return fetchToolsForUrl(message.url)
+      return fetchToolsForUrl(message.url, message.allowSeedFallback)
+    case "extension/fetch-analysis-for-url":
+      return fetchAnalysisForUrl(message.url)
     case "extension/open-tool":
       return openTool(message.toolId)
     case "extension/list-library":

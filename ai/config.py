@@ -66,7 +66,7 @@ def get_ai_settings() -> AiSettings:
     if provider == "gemini":
         api_key = os.environ.get("GEMINI_API_KEY")
         base_url = os.environ.get("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta").rstrip("/")
-        model = os.environ.get("GEMINI_MODEL", "gemma-3-27b-it")
+        model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
     else:
         api_key = os.environ.get("OPENAI_API_KEY")
         base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")

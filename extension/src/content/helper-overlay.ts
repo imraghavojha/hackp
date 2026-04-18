@@ -1,6 +1,6 @@
 import { backendApi } from "../background/api"
 import { sendExtensionMessage } from "../lib/messaging"
-import type { ToolRecord } from "../types/tools"
+import type { AnalysisRecord, ToolRecord } from "../types/tools"
 
 const OVERLAY_ROOT_ID = "pwa-inline-helper-root"
 
@@ -157,13 +157,16 @@ async function wait(ms: number) {
   await new Promise((resolve) => globalThis.setTimeout(resolve, ms))
 }
 
-export async function showInlineHelper(tool: ToolRecord): Promise<HelperOverlayHandle> {
+export async function showInlineHelper(tool: ToolRecord, analysis: AnalysisRecord | null): Promise<HelperOverlayHandle> {
   ensureOverlayStyles()
 
   document.getElementById(OVERLAY_ROOT_ID)?.remove()
   const root = document.createElement("div")
   root.id = OVERLAY_ROOT_ID
   root.dataset.extensionOwned = "true"
+  const whyText = analysis
+    ? `${analysis.summary} Repetition count: ${analysis.repetition_count}. Confidence: ${analysis.confidence ?? "n/a"}.`
+    : "This helper was suggested because the workflow looks similar to a repeated task."
   root.innerHTML = `
     <section class="pwa-helper-card">
       <header class="pwa-helper-header">
@@ -182,11 +185,37 @@ export async function showInlineHelper(tool: ToolRecord): Promise<HelperOverlayH
             <div class="pwa-helper-loader__orb"></div>
             <div class="pwa-helper-loader__title">Preparing your helper</div>
             <div class="pwa-helper-loader__text" data-loading-text>
-              Reviewing the repeated workflow and loading the helper in place.
+              Reviewing your repeated workflow and preparing the helper in place.
             </div>
           </div>
         </div>
         <iframe class="pwa-helper-frame" title="${tool.name} helper"></iframe>
+        <aside
+          style="
+            position:absolute;
+            top:18px;
+            right:18px;
+            width:260px;
+            background:#ffffff;
+            border:1px solid rgba(148,163,184,0.24);
+            border-radius:16px;
+            box-shadow:0 12px 32px rgba(15,23,42,0.08);
+            padding:14px;
+            display:grid;
+            gap:12px;
+          ">
+          <div>
+            <strong style="display:block;margin-bottom:6px;">Why this helper?</strong>
+            <div style="font-size:0.9rem;color:#6b7280;line-height:1.45;">${whyText}</div>
+          </div>
+          <div>
+            <strong style="display:block;margin-bottom:6px;">Personalize it</strong>
+            <div style="font-size:0.85rem;color:#6b7280;margin-bottom:8px;">Tell Bob's assistant what to change next.</div>
+            <textarea data-chat-input placeholder="Example: make the tone warmer, add a total row, use Q3 tags." style="width:100%;min-height:88px;box-sizing:border-box;border-radius:12px;border:1px solid rgba(148,163,184,0.24);padding:10px 12px;font:inherit;"></textarea>
+            <button class="primary" data-action="save-preference" style="margin-top:8px;">Save preference</button>
+            <div data-chat-status style="margin-top:6px;font-size:0.84rem;color:#6b7280;">Saved preferences will affect future generations.</div>
+          </div>
+        </aside>
       </div>
     </section>
   `
@@ -210,6 +239,27 @@ export async function showInlineHelper(tool: ToolRecord): Promise<HelperOverlayH
     if (action === "popout") {
       void sendExtensionMessage({ type: "extension/open-tool", toolId: tool.id })
     }
+    if (action === "save-preference") {
+      const textarea = root.querySelector<HTMLTextAreaElement>("[data-chat-input]")
+      const status = root.querySelector<HTMLElement>("[data-chat-status]")
+      const feedback = textarea?.value.trim() ?? ""
+      if (!feedback) {
+        if (status) status.textContent = "Add a message first."
+        return
+      }
+      void sendExtensionMessage({
+        type: "extension/tool-feedback",
+        payload: {
+          toolId: tool.id,
+          feedback,
+          context: "chat",
+          succeeded: true,
+          durationMs: 1_000
+        }
+      }).then((response) => {
+        if (status) status.textContent = response.ok ? "Preference saved. The next generated helper will use it." : "Couldn't save preference."
+      })
+    }
   })
 
   document.documentElement.appendChild(root)
@@ -220,8 +270,9 @@ export async function showInlineHelper(tool: ToolRecord): Promise<HelperOverlayH
 
   const artifactUrl = backendApi.getArtifactUrl(tool.id)
   loadingText.textContent = "Reviewing the workflow and preparing the helper surface."
-  await wait(850)
-  loadingText.textContent = "Loading the helper interface for this task."
+  await wait(1500)
+  loadingText.textContent = "Brewing the helper interface for this task."
+  await wait(1500)
 
   const frameLoaded = new Promise<void>((resolve) => {
     iframe.addEventListener("load", () => resolve(), { once: true })

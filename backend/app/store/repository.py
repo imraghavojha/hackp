@@ -5,7 +5,7 @@ import sqlite3
 from datetime import UTC, datetime
 from typing import Any
 
-from backend.app.contracts import EventModel, FeedbackRequest, ToolRecord
+from backend.app.contracts import AnalysisRecord, EventModel, FeedbackRequest, ToolRecord
 from backend.app.store.db import Database
 
 
@@ -133,6 +133,90 @@ class PlatformRepository:
                 (user_id,),
             ).fetchall()
         return [self._decode_tool_row(row) for row in rows]
+
+    def create_analysis(
+        self,
+        *,
+        user_id: str,
+        url: str,
+        signature: str | None,
+        transformation_name: str | None,
+        summary: str,
+        confidence: float | None,
+        repetition_count: int,
+        event_window: dict[str, Any],
+        status: str,
+        tool_id: str | None = None,
+    ) -> AnalysisRecord:
+        created_at = utc_now()
+        with self.database.connect() as connection:
+            cursor = connection.execute(
+                """
+                INSERT INTO analyses (
+                    user_id, url, signature, transformation_name, summary,
+                    confidence, repetition_count, event_window_json, status, tool_id, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    user_id,
+                    url,
+                    signature,
+                    transformation_name,
+                    summary,
+                    confidence,
+                    repetition_count,
+                    json.dumps(event_window),
+                    status,
+                    tool_id,
+                    created_at,
+                ),
+            )
+            connection.commit()
+            analysis_id = int(cursor.lastrowid)
+        return AnalysisRecord.model_validate(
+            {
+                "id": analysis_id,
+                "user_id": user_id,
+                "url": url,
+                "signature": signature,
+                "transformation_name": transformation_name,
+                "summary": summary,
+                "confidence": confidence,
+                "repetition_count": repetition_count,
+                "event_window": event_window,
+                "status": status,
+                "tool_id": tool_id,
+                "created_at": created_at,
+            }
+        )
+
+    def latest_analysis_for_url(self, user_id: str, url: str) -> AnalysisRecord | None:
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM analyses
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                """,
+                (user_id,),
+            ).fetchall()
+        for row in rows:
+            if row["url"] in url or url in row["url"]:
+                return self._decode_analysis_row(row)
+        return None
+
+    def list_recent_analyses(self, user_id: str, limit: int = 5) -> list[AnalysisRecord]:
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT * FROM analyses
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (user_id, limit),
+            ).fetchall()
+        return [self._decode_analysis_row(row) for row in rows]
 
     def store_artifact_record(self, artifact_id: str, user_id: str, html_path: str) -> None:
         with self.database.connect() as connection:
@@ -320,5 +404,23 @@ class PlatformRepository:
                 "stats": json.loads(row["stats_json"]),
                 "status": row["status"],
                 "signature": row["signature"],
+            }
+        )
+
+    def _decode_analysis_row(self, row: sqlite3.Row) -> AnalysisRecord:
+        return AnalysisRecord.model_validate(
+            {
+                "id": row["id"],
+                "user_id": row["user_id"],
+                "url": row["url"],
+                "signature": row["signature"],
+                "transformation_name": row["transformation_name"],
+                "summary": row["summary"],
+                "confidence": row["confidence"],
+                "repetition_count": row["repetition_count"],
+                "event_window": json.loads(row["event_window_json"]),
+                "status": row["status"],
+                "tool_id": row["tool_id"],
+                "created_at": row["created_at"],
             }
         )

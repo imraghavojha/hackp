@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 
-from backend.app.contracts import ToolsForUrlResponse, ToolUsageRequest, ToolUsageResponse
+from backend.app.contracts import AnalysisForUrlResponse, ToolsForUrlResponse, ToolUsageRequest, ToolUsageResponse
 from backend.app.triggers.url_visit import matches_tool_trigger
 
 
@@ -15,10 +15,40 @@ def get_tools_for_url(
     request: Request,
     url: str = Query(...),
     user_id: str = Query(...),
+    allow_seed_fallback: bool = Query(False),
 ) -> ToolsForUrlResponse:
     repository = request.app.state.repository
     tools = [tool for tool in repository.list_ready_tools_for_url(user_id) if matches_tool_trigger(tool.trigger, url)]
-    return ToolsForUrlResponse(tools=tools)
+    latest_analysis = repository.latest_analysis_for_url(user_id, url)
+
+    generated_tools = [tool for tool in tools if tool.signature is not None]
+    seed_tools = [tool for tool in tools if tool.signature is None]
+
+    if generated_tools:
+      return ToolsForUrlResponse(tools=generated_tools)
+
+    if latest_analysis and latest_analysis.repetition_count >= 3:
+        if latest_analysis.tool_id:
+            matching = [tool for tool in tools if tool.id == latest_analysis.tool_id]
+            if matching:
+                return ToolsForUrlResponse(tools=matching)
+        return ToolsForUrlResponse(tools=seed_tools)
+
+    if allow_seed_fallback:
+        return ToolsForUrlResponse(tools=seed_tools)
+
+    return ToolsForUrlResponse(tools=[])
+
+
+@router.get("/analysis/for_url", response_model=AnalysisForUrlResponse)
+def get_analysis_for_url(
+    request: Request,
+    url: str = Query(...),
+    user_id: str = Query(...),
+) -> AnalysisForUrlResponse:
+    repository = request.app.state.repository
+    analysis = repository.latest_analysis_for_url(user_id, url)
+    return AnalysisForUrlResponse(analysis=analysis)
 
 
 @router.get("/tools/{tool_id}/artifact", response_class=HTMLResponse)

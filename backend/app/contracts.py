@@ -104,8 +104,32 @@ class ToolRecord(BaseModel):
     signature: str | None = None
 
 
+class AnalysisWindow(BaseModel):
+    start: str | None = None
+    end: str | None = None
+
+
+class AnalysisRecord(BaseModel):
+    id: int
+    user_id: str
+    url: str
+    signature: str | None = None
+    transformation_name: str | None = None
+    summary: str
+    confidence: float | None = None
+    repetition_count: int
+    event_window: AnalysisWindow
+    status: str
+    tool_id: str | None = None
+    created_at: str
+
+
 class ToolsForUrlResponse(BaseModel):
     tools: list[ToolRecord]
+
+
+class AnalysisForUrlResponse(BaseModel):
+    analysis: AnalysisRecord | None
 
 
 class ToolUsageRequest(BaseModel):

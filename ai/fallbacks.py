@@ -104,6 +104,14 @@ def classify_domain_from_events(events: list[Any]) -> DomainKey | None:
     return None
 
 
+def infer_repetition_count(events: list[dict[str, Any]]) -> int:
+    output_events = [event for event in events if event.get("event_type") in {"submit", "file_download"}]
+    if output_events:
+      return len(output_events)
+    critical_events = [event for event in events if event.get("event_type") in {"copy", "paste", "input", "submit", "file_download"}]
+    return max(2, len(critical_events) // 2)
+
+
 def domain_from_signature(signature: str | None) -> DomainKey | None:
     if signature is None:
         return None
@@ -115,7 +123,6 @@ def domain_from_signature(signature: str | None) -> DomainKey | None:
 
 def build_detection_response(domain: DomainKey, events: list[dict[str, Any]], confidence: float, summary: str | None = None) -> dict[str, Any]:
     definition = DOMAIN_DEFINITIONS[domain]
-    critical_events = [event for event in events if event.get("event_type") in {"copy", "paste", "input", "submit", "file_download"}]
     return {
         "detected": True,
         "signature": definition["signature"],
@@ -128,7 +135,7 @@ def build_detection_response(domain: DomainKey, events: list[dict[str, Any]], co
             "start": events[0]["timestamp"],
             "end": events[-1]["timestamp"],
         },
-        "repetition_count": max(2, len(critical_events) // 2),
+        "repetition_count": infer_repetition_count(events),
     }
 
 

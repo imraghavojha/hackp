@@ -37,6 +37,9 @@ class Settings:
     ai_base_url: str
     scheduler_enabled: bool
     scheduler_interval_seconds: int
+    detection_min_events: int
+    detection_min_activity_window_seconds: int
+    detection_min_repetitions: int
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -56,4 +59,7 @@ class Settings:
             ai_base_url=ai_base_url.rstrip("/"),
             scheduler_enabled=_bool_from_env("PWA_SCHEDULER_ENABLED", True),
             scheduler_interval_seconds=int(os.environ.get("PWA_SCHEDULER_INTERVAL_SECONDS", "120")),
+            detection_min_events=int(os.environ.get("PWA_DETECTION_MIN_EVENTS", "50")),
+            detection_min_activity_window_seconds=int(os.environ.get("PWA_DETECTION_MIN_ACTIVITY_WINDOW_SECONDS", "600")),
+            detection_min_repetitions=int(os.environ.get("PWA_DETECTION_MIN_REPETITIONS", "3")),
         )

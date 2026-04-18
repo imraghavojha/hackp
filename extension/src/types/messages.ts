@@ -1,5 +1,5 @@
 import type { ObservedEvent } from "./events"
-import type { CachedToolEntry, ToolRecord } from "./tools"
+import type { AnalysisRecord, CachedToolEntry, ToolRecord } from "./tools"
 
 export interface ExtensionSettings {
   userId: string
@@ -17,7 +17,8 @@ export interface ToolFeedbackPayload {
 
 export type ExtensionMessage =
   | { type: "extension/queue-events"; events: ObservedEvent[] }
-  | { type: "extension/fetch-tools-for-url"; url: string }
+  | { type: "extension/fetch-tools-for-url"; url: string; allowSeedFallback?: boolean }
+  | { type: "extension/fetch-analysis-for-url"; url: string }
   | { type: "extension/open-tool"; toolId: string }
   | { type: "extension/list-library" }
   | { type: "extension/get-settings" }
@@ -27,5 +28,13 @@ export type ExtensionMessage =
   | { type: "extension/tool-feedback"; payload: ToolFeedbackPayload }
 
 export type ExtensionMessageResponse =
-  | { ok: true; accepted?: number; buffered?: number; tools?: ToolRecord[]; settings?: ExtensionSettings; library?: CachedToolEntry[] }
+  | {
+      ok: true
+      accepted?: number
+      buffered?: number
+      tools?: ToolRecord[]
+      analysis?: AnalysisRecord | null
+      settings?: ExtensionSettings
+      library?: CachedToolEntry[]
+    }
   | { ok: false; error: string }

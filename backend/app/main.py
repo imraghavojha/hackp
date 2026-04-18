@@ -33,6 +33,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         repository=repository,
         artifact_store=artifact_store,
         ai_gateway=HttpAiGateway(settings.ai_base_url),
+        min_events_for_detection=settings.detection_min_events,
+        min_activity_window_seconds=settings.detection_min_activity_window_seconds,
+        min_repetitions_to_suggest=settings.detection_min_repetitions,
     )
     scheduler_runner = SchedulerRunner(
         repository=repository,

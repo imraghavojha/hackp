@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 
 import { sendExtensionMessage } from "../lib/messaging"
 import type { ExtensionSettings } from "../types/messages"
-import type { CachedToolEntry, ToolRecord } from "../types/tools"
+import type { AnalysisRecord, CachedToolEntry, ToolRecord } from "../types/tools"
 
 async function getCurrentTabUrl(): Promise<string> {
   return new Promise((resolve) => {
@@ -15,6 +15,7 @@ async function getCurrentTabUrl(): Promise<string> {
 export function PopupApp() {
   const [matchingTools, setMatchingTools] = useState<ToolRecord[]>([])
   const [libraryTools, setLibraryTools] = useState<CachedToolEntry[]>([])
+  const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisRecord | null>(null)
   const [settings, setSettings] = useState<ExtensionSettings | null>(null)
   const [status, setStatus] = useState("Loading extension state...")
 
@@ -35,10 +36,16 @@ export function PopupApp() {
 
       const currentUrl = await getCurrentTabUrl()
       if (currentUrl) {
-        const toolsResponse = await sendExtensionMessage({
-          type: "extension/fetch-tools-for-url",
-          url: currentUrl
-        })
+        const [toolsResponse, analysisResponse] = await Promise.all([
+          sendExtensionMessage({
+            type: "extension/fetch-tools-for-url",
+            url: currentUrl
+          }),
+          sendExtensionMessage({
+            type: "extension/fetch-analysis-for-url",
+            url: currentUrl
+          })
+        ])
 
         if (toolsResponse.ok && toolsResponse.tools) {
           setMatchingTools(toolsResponse.tools)
@@ -49,6 +56,10 @@ export function PopupApp() {
           )
         } else {
           setStatus("Couldn't fetch tools for the current page.")
+        }
+
+        if (analysisResponse.ok) {
+          setCurrentAnalysis(analysisResponse.analysis ?? null)
         }
       } else {
         setStatus("Open a regular browser tab to see matching tools.")
@@ -97,6 +108,34 @@ export function PopupApp() {
           Signed in as <strong style={{ color: "#111827" }}>{settings?.userId ?? "bob"}</strong>
         </p>
       </section>
+
+      {currentAnalysis ? (
+        <section style={{ marginTop: 16 }}>
+          <h2 style={{ margin: "0 0 8px", fontSize: "0.95rem" }}>Latest analysis</h2>
+          <article
+            style={{
+              borderRadius: 16,
+              border: "1px solid rgba(148, 163, 184, 0.18)",
+              padding: 14,
+              background: "#ffffff",
+              boxShadow: "0 8px 18px rgba(15, 23, 42, 0.05)"
+            }}>
+            <div style={{ fontWeight: 700 }}>
+              {currentAnalysis.transformation_name ?? "Repeated workflow detected"}
+            </div>
+            <div style={{ color: "#6b7280", fontSize: "0.86rem", marginTop: 4 }}>
+              {currentAnalysis.summary}
+            </div>
+            <div style={{ color: "#6b7280", fontSize: "0.8rem", marginTop: 8 }}>
+              Repetition count: {currentAnalysis.repetition_count}
+              {" · "}
+              Confidence: {currentAnalysis.confidence ?? "n/a"}
+              {" · "}
+              Status: {currentAnalysis.status}
+            </div>
+          </article>
+        </section>
+      ) : null}
 
       <section style={{ marginTop: 16 }}>
         <h2 style={{ margin: "0 0 8px", fontSize: "0.95rem" }}>Tools</h2>

@@ -1,6 +1,6 @@
 import { POPUP_TTL_MS } from "../lib/constants"
 import { sendExtensionMessage } from "../lib/messaging"
-import type { ToolRecord } from "../types/tools"
+import type { AnalysisRecord, ToolRecord } from "../types/tools"
 
 const TOAST_ROOT_ID = "pwa-extension-toast-root"
 
@@ -118,6 +118,7 @@ export interface ToastHandle {
 export function showSuggestionToast(
   tool: ToolRecord,
   origin: string,
+  analysis: AnalysisRecord | null,
   onOpen: () => void
 ): ToastHandle {
   ensureToastStyles()
@@ -128,13 +129,17 @@ export function showSuggestionToast(
   const root = document.createElement("div")
   root.id = TOAST_ROOT_ID
   root.dataset.extensionOwned = "true"
+  const prompt =
+    analysis && analysis.repetition_count >= 3
+      ? `This is at least the third time I've seen you do this. Want me to make a helper for it?`
+      : tool.trigger.prompt
   root.innerHTML = `
     <aside class="pwa-toast" data-theme="${tool.ui_prefs.theme ?? "dark"}">
       <div class="pwa-toast__inner">
         <div class="pwa-toast__top">
           <div>
             <div class="pwa-toast__title">${tool.name}</div>
-            <div class="pwa-toast__prompt">${tool.trigger.prompt}</div>
+            <div class="pwa-toast__prompt">${prompt}</div>
           </div>
           <button class="pwa-toast__ghost" data-action="dismiss" aria-label="Dismiss">×</button>
         </div>

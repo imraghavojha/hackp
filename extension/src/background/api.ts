@@ -1,5 +1,5 @@
 import type { EventsBatchRequest, EventsBatchResponse } from "../types/events"
-import type { FeedbackRequest, ToolRecord, UsageRequest } from "../types/tools"
+import type { AnalysisRecord, FeedbackRequest, ToolRecord, UsageRequest } from "../types/tools"
 import { BACKEND_BASE_URL } from "../lib/constants"
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -21,12 +21,27 @@ export const backendApi = {
     return parseJsonResponse<EventsBatchResponse>(response)
   },
 
-  async getToolsForUrl(url: string, userId: string): Promise<ToolRecord[]> {
+  async getToolsForUrl(url: string, userId: string, allowSeedFallback = false): Promise<ToolRecord[]> {
+    const params = new URLSearchParams({
+      url,
+      user_id: userId
+    })
+    if (allowSeedFallback) {
+      params.set("allow_seed_fallback", "true")
+    }
     const response = await fetch(
-      `${BACKEND_BASE_URL}/v1/tools/for_url?url=${encodeURIComponent(url)}&user_id=${encodeURIComponent(userId)}`
+      `${BACKEND_BASE_URL}/v1/tools/for_url?${params.toString()}`
     )
     const data = await parseJsonResponse<{ tools: ToolRecord[] }>(response)
     return data.tools
+  },
+
+  async getAnalysisForUrl(url: string, userId: string): Promise<AnalysisRecord | null> {
+    const response = await fetch(
+      `${BACKEND_BASE_URL}/v1/analysis/for_url?url=${encodeURIComponent(url)}&user_id=${encodeURIComponent(userId)}`
+    )
+    const data = await parseJsonResponse<{ analysis: AnalysisRecord | null }>(response)
+    return data.analysis
   },
 
   getArtifactUrl(toolId: string): string {

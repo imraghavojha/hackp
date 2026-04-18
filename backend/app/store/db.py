@@ -55,6 +55,23 @@ CREATE TABLE IF NOT EXISTS feedback (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS analyses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    url TEXT NOT NULL,
+    signature TEXT,
+    transformation_name TEXT,
+    summary TEXT NOT NULL,
+    confidence REAL,
+    repetition_count INTEGER NOT NULL,
+    event_window_json TEXT NOT NULL,
+    status TEXT NOT NULL,
+    tool_id TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS analyses_user_url_created_idx ON analyses(user_id, url, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS scheduler_state (
     user_id TEXT PRIMARY KEY,
     last_processed_event_id INTEGER NOT NULL DEFAULT 0,

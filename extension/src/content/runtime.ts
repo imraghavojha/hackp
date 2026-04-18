@@ -19,6 +19,9 @@ interface ObserverContext {
   userId: string
   currentToast: { dispose: () => void } | null
   currentHelper: { dispose: () => void } | null
+  lastSuggestionKey: string | null
+  pollTimerId: number | null
+  repeatedActionCount: number
 }
 
 function createSessionId(): string {
@@ -74,10 +77,17 @@ function inferClickEventType(target: EventTarget | null): ObservedEvent["event_t
     return "file_download"
   }
 
+  if (
+    target instanceof HTMLButtonElement &&
+    /format|run|process|apply|submit/i.test([target.textContent, target.getAttribute("aria-label")].filter(Boolean).join(" "))
+  ) {
+    return "submit"
+  }
+
   return "click"
 }
 
-async function recordNavigation(context: ObserverContext, reason: string) {
+async function refreshSuggestion(context: ObserverContext, reason: string) {
   const event = buildObservedEvent(
     {
       session_id: context.sessionId,
@@ -109,8 +119,14 @@ async function recordNavigation(context: ObserverContext, reason: string) {
 
   const response = await sendExtensionMessage({
     type: "extension/fetch-tools-for-url",
+    url: window.location.href,
+    allowSeedFallback: context.repeatedActionCount >= 3
+  })
+  const analysisResponse = await sendExtensionMessage({
+    type: "extension/fetch-analysis-for-url",
     url: window.location.href
   })
+  const analysis = analysisResponse.ok ? analysisResponse.analysis ?? null : null
 
   if (!response.ok || !response.tools || response.tools.length === 0) {
     context.currentToast?.dispose()
@@ -123,10 +139,40 @@ async function recordNavigation(context: ObserverContext, reason: string) {
     return
   }
 
+  const suggestionKey = [
+    tool.id,
+    analysis?.id ?? "no-analysis",
+    analysis?.repetition_count ?? context.repeatedActionCount,
+    window.location.href
+  ].join("::")
+  if (context.lastSuggestionKey === suggestionKey && context.currentToast) {
+    return
+  }
+  context.lastSuggestionKey = suggestionKey
+
   context.currentToast?.dispose()
   globalThis.setTimeout(() => {
-    context.currentToast = showSuggestionToast(tool, window.location.origin, () => {
-      void showInlineHelper(tool).then((handle) => {
+    const effectiveAnalysis =
+      analysis ??
+      (context.repeatedActionCount >= 3
+        ? {
+            id: 0,
+            user_id: context.userId,
+            url: window.location.href,
+            signature: tool.signature ?? null,
+            transformation_name: tool.name,
+            summary: "I noticed you repeating the same workflow on this page.",
+            confidence: null,
+            repetition_count: context.repeatedActionCount,
+            event_window: { start: null, end: null },
+            status: "observed",
+            tool_id: tool.id,
+            created_at: new Date().toISOString()
+          }
+        : null)
+
+    context.currentToast = showSuggestionToast(tool, window.location.origin, effectiveAnalysis, () => {
+      void showInlineHelper(tool, effectiveAnalysis).then((handle) => {
         context.currentHelper?.dispose()
         context.currentHelper = handle
       })
@@ -156,6 +202,43 @@ function isExtensionOwnedTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && Boolean(target.closest("[data-extension-owned='true']"))
 }
 
+function registerDemoActionBridge(
+  context: ObserverContext,
+  enqueueRawEvent: (
+    eventType: ObservedEvent["event_type"],
+    target: ObservedTarget,
+    rawValue: string,
+    extra?: {
+      fieldType?: string | null
+      autocomplete?: string | null
+      metadata?: Record<string, unknown>
+    }
+  ) => Promise<void>
+) {
+  window.addEventListener("pwa-demo-action", (event: Event) => {
+    const customEvent = event as CustomEvent<{
+      event_type?: ObservedEvent["event_type"]
+      value?: string
+      metadata?: Record<string, unknown>
+      target?: ObservedTarget
+    }>
+    const detail = customEvent.detail ?? {}
+    const eventType = detail.event_type ?? "click"
+    const target = detail.target ?? {
+      tag: "demo",
+      role: null,
+      text: "demo-action",
+      aria_label: null
+    }
+    void enqueueRawEvent(eventType, target, detail.value ?? "", {
+      metadata: {
+        source: "demo-bridge",
+        ...(detail.metadata ?? {})
+      }
+    })
+  })
+}
+
 export async function bootstrapContentObserver(): Promise<void> {
   if (isArtifactPage(window.location.href)) {
     mountArtifactFeedback(window.location.href)
@@ -170,7 +253,10 @@ export async function bootstrapContentObserver(): Promise<void> {
     sessionId: createSessionId(),
     userId: settings.userId,
     currentToast: null,
-    currentHelper: null
+    currentHelper: null,
+    lastSuggestionKey: null,
+    pollTimerId: null,
+    repeatedActionCount: 0
   }
 
   const enqueueRawEvent = async (
@@ -200,7 +286,13 @@ export async function bootstrapContentObserver(): Promise<void> {
     )
 
     if (observed) {
+      if (eventType === "submit" || eventType === "file_download") {
+        context.repeatedActionCount += 1
+      }
       await queueObservedEvent(observed)
+      if (context.repeatedActionCount >= 3) {
+        void refreshSuggestion(context, "local-threshold")
+      }
     }
   }
 
@@ -288,17 +380,25 @@ export async function bootstrapContentObserver(): Promise<void> {
     true
   )
 
+  registerDemoActionBridge(context, enqueueRawEvent)
+
   observeHistory((reason) => {
     context.currentHelper?.dispose()
     context.currentHelper = null
-    void recordNavigation(context, reason)
+    context.lastSuggestionKey = null
+    context.repeatedActionCount = 0
+    void refreshSuggestion(context, reason)
   })
 
   window.addEventListener("beforeunload", () => {
     context.currentHelper?.dispose()
     context.currentHelper = null
-    void recordNavigation(context, "beforeunload")
+    void refreshSuggestion(context, "beforeunload")
   })
 
-  await recordNavigation(context, "initial-load")
+  context.pollTimerId = globalThis.setInterval(() => {
+    void refreshSuggestion(context, "poll")
+  }, 5_000)
+
+  await refreshSuggestion(context, "initial-load")
 }

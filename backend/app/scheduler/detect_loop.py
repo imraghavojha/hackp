@@ -21,12 +21,6 @@ from backend.app.contracts import (
 from backend.app.store.repository import PlatformRepository
 
 
-DETECTION_INTERVAL_SECONDS = 120
-MIN_EVENTS_FOR_DETECTION = 50
-MIN_ACTIVITY_WINDOW_SECONDS = 600
-MIN_REPETITIONS_TO_SUGGEST = 3
-
-
 def utc_now() -> str:
     return datetime.now(tz=UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
@@ -69,10 +63,22 @@ class HttpAiGateway:
 
 
 class DetectionScheduler:
-    def __init__(self, repository: PlatformRepository, artifact_store: ArtifactStore, ai_gateway: AiGateway):
+    def __init__(
+        self,
+        repository: PlatformRepository,
+        artifact_store: ArtifactStore,
+        ai_gateway: AiGateway,
+        *,
+        min_events_for_detection: int = 50,
+        min_activity_window_seconds: int = 600,
+        min_repetitions_to_suggest: int = 3,
+    ):
         self.repository = repository
         self.artifact_store = artifact_store
         self.ai_gateway = ai_gateway
+        self.min_events_for_detection = min_events_for_detection
+        self.min_activity_window_seconds = min_activity_window_seconds
+        self.min_repetitions_to_suggest = min_repetitions_to_suggest
 
     def maybe_process_user(self, user_id: str) -> ToolRecord | None:
         pending_events = self.repository.get_pending_events(user_id)
@@ -95,8 +101,31 @@ class DetectionScheduler:
         if not detection.get("detected"):
             self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
             return None
-        if int(detection.get("repetition_count") or 0) < MIN_REPETITIONS_TO_SUGGEST:
-            self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
+
+        latest_url = str(pending_events[-1]["url"])
+        repetition_count = int(detection.get("repetition_count") or 0)
+        analysis_status = "observed"
+        analysis_tool_id: str | None = None
+        if int(detection.get("repetition_count") or 0) < self.min_repetitions_to_suggest:
+            latest_analysis = self.repository.latest_analysis_for_url(user_id, latest_url)
+            if not (
+                latest_analysis
+                and latest_analysis.signature == detection.get("signature")
+                and latest_analysis.repetition_count == repetition_count
+                and latest_analysis.status == analysis_status
+            ):
+                self.repository.create_analysis(
+                    user_id=user_id,
+                    url=latest_url,
+                    signature=detection.get("signature"),
+                    transformation_name=detection.get("transformation_name"),
+                    summary=str(detection.get("summary") or "Repeated workflow observed."),
+                    confidence=float(detection.get("confidence")) if detection.get("confidence") is not None else None,
+                    repetition_count=repetition_count,
+                    event_window=detection.get("event_window") or {},
+                    status=analysis_status,
+                    tool_id=None,
+                )
             return None
 
         generated = self._generate_valid_artifact(
@@ -105,6 +134,18 @@ class DetectionScheduler:
             pending_events=pending_events,
         )
         if generated is None:
+            self.repository.create_analysis(
+                user_id=user_id,
+                url=latest_url,
+                signature=detection.get("signature"),
+                transformation_name=detection.get("transformation_name"),
+                summary=str(detection.get("summary") or "Repeated workflow observed."),
+                confidence=float(detection.get("confidence")) if detection.get("confidence") is not None else None,
+                repetition_count=repetition_count,
+                event_window=detection.get("event_window") or {},
+                status="fallback_ready",
+                tool_id=self._fallback_tool_id_for_signature(detection.get("signature")),
+            )
             self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
             return None
 
@@ -122,6 +163,20 @@ class DetectionScheduler:
             artifact_id=artifact_id,
         )
         self.repository.save_tool(tool)
+        analysis_status = "generated"
+        analysis_tool_id = tool_id
+        self.repository.create_analysis(
+            user_id=user_id,
+            url=latest_url,
+            signature=detection.get("signature"),
+            transformation_name=detection.get("transformation_name"),
+            summary=str(detection.get("summary") or "Repeated workflow observed."),
+            confidence=float(detection.get("confidence")) if detection.get("confidence") is not None else None,
+            repetition_count=repetition_count,
+            event_window=detection.get("event_window") or {},
+            status=analysis_status,
+            tool_id=analysis_tool_id,
+        )
         self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
         return tool
 
@@ -149,11 +204,11 @@ class DetectionScheduler:
         return None
 
     def _threshold_reached(self, events: list[dict[str, Any]]) -> bool:
-        if len(events) >= MIN_EVENTS_FOR_DETECTION:
+        if len(events) >= self.min_events_for_detection:
             return True
         start = parse_timestamp(events[0]["timestamp"])
         end = parse_timestamp(events[-1]["timestamp"])
-        return int((end - start).total_seconds()) >= MIN_ACTIVITY_WINDOW_SECONDS
+        return int((end - start).total_seconds()) >= self.min_activity_window_seconds
 
     def _strip_event_identifier(self, event: dict[str, Any]) -> dict[str, Any]:
         return {key: value for key, value in event.items() if key != "id"}
@@ -194,3 +249,12 @@ class DetectionScheduler:
             status="ready",
             signature=detection["signature"],
         )
+
+    def _fallback_tool_id_for_signature(self, signature: str | None) -> str | None:
+        if signature == "sig_domain_a_lead_formatter":
+            return "tool_lead_formatter_v1"
+        if signature == "sig_domain_b_market_brief":
+            return "tool_market_brief_builder_v1"
+        if signature == "sig_domain_c_reply_drafter":
+            return "tool_reply_drafter_v1"
+        return None

@@ -40,9 +40,15 @@ export interface ToolArtifactSummary {
 export interface ToolRecord {
   id: string
   user_id: string
+  signature?: string | null
   name: string
   description: string
   created_at: string
+  source_event_window?: {
+    start: string | null
+    end: string | null
+    repetition_count: number
+  }
   trigger: ToolTrigger
   ui_prefs: ToolUiPrefs
   transformation_summary: string[]
@@ -68,4 +74,22 @@ export interface CachedToolEntry extends ToolRecord {
   last_suggested_at?: string | null
   last_opened_at?: string | null
   source_url?: string | null
+}
+
+export interface AnalysisRecord {
+  id: number
+  user_id: string
+  url: string
+  signature: string | null
+  transformation_name: string | null
+  summary: string
+  confidence: number | null
+  repetition_count: number
+  event_window: {
+    start: string | null
+    end: string | null
+  }
+  status: string
+  tool_id: string | null
+  created_at: string
 }
