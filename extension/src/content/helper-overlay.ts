@@ -23,34 +23,34 @@ function ensureOverlayStyles() {
       font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
     }
     .pwa-helper-card {
-      width: min(720px, calc(100vw - 32px));
-      height: min(82vh, 860px);
-      background: #ffffff;
-      color: #111827;
-      border: 1px solid rgba(148, 163, 184, 0.24);
+      width: min(760px, calc(100vw - 32px));
+      height: min(84vh, 900px);
+      background: #111827;
+      color: #f3f4f6;
+      border: 1px solid rgba(148, 163, 184, 0.22);
       border-radius: 22px;
-      box-shadow: 0 24px 64px rgba(15, 23, 42, 0.16);
+      box-shadow: 0 24px 64px rgba(15, 23, 42, 0.24);
       overflow: hidden;
       display: grid;
       grid-template-rows: auto 1fr;
     }
     .pwa-helper-header {
-      padding: 16px 18px;
+      padding: 18px 20px;
       border-bottom: 1px solid rgba(148, 163, 184, 0.18);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      background: #f8fafc;
+      background: #0f172a;
     }
     .pwa-helper-title {
-      font-size: 1rem;
+      font-size: 1.08rem;
       font-weight: 700;
       margin: 0;
     }
     .pwa-helper-subtitle {
       font-size: 0.9rem;
-      color: #6b7280;
+      color: #9ca3af;
       margin: 4px 0 0;
     }
     .pwa-helper-actions {
@@ -62,33 +62,34 @@ function ensureOverlayStyles() {
     .pwa-helper-actions button {
       border: 0;
       border-radius: 999px;
-      padding: 10px 14px;
+      padding: 13px 18px;
       font: inherit;
       font-weight: 700;
       cursor: pointer;
+      font-size: 0.95rem;
     }
     .pwa-helper-actions .primary {
       background: #1d4ed8;
       color: #ffffff;
     }
     .pwa-helper-actions .secondary {
-      background: #e5e7eb;
-      color: #111827;
+      background: #374151;
+      color: #f3f4f6;
     }
     .pwa-helper-actions .ghost {
       background: transparent;
-      color: #374151;
+      color: #d1d5db;
     }
     .pwa-helper-body {
       position: relative;
-      background: #ffffff;
+      background: #111827;
     }
     .pwa-helper-loader {
       position: absolute;
       inset: 0;
       display: grid;
       place-items: center;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
     }
     .pwa-helper-loader[data-hidden="true"] {
       display: none;
@@ -124,10 +125,10 @@ function ensureOverlayStyles() {
     .pwa-helper-loader__title {
       font-size: 1.15rem;
       font-weight: 700;
-      color: #111827;
+      color: #f3f4f6;
     }
     .pwa-helper-loader__text {
-      color: #6b7280;
+      color: #9ca3af;
       max-width: 420px;
       line-height: 1.45;
     }
@@ -135,7 +136,72 @@ function ensureOverlayStyles() {
       border: 0;
       width: 100%;
       height: 100%;
-      background: #ffffff;
+      background: #111827;
+    }
+    .pwa-helper-shell {
+      position: relative;
+      height: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      transition: grid-template-columns 180ms ease;
+    }
+    .pwa-helper-shell[data-drawer-open="true"] {
+      grid-template-columns: minmax(0, 1fr) 320px;
+    }
+    .pwa-helper-sidebar-toggle {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 2;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: rgba(17, 24, 39, 0.96);
+      color: #f3f4f6;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+    }
+    .pwa-helper-sidebar {
+      border-left: 1px solid rgba(148, 163, 184, 0.18);
+      background: #0f172a;
+      color: #f3f4f6;
+      padding: 18px;
+      display: none;
+      gap: 14px;
+      align-content: start;
+    }
+    .pwa-helper-shell[data-drawer-open="true"] .pwa-helper-sidebar {
+      display: grid;
+    }
+    .pwa-helper-sidebar div,
+    .pwa-helper-sidebar p {
+      color: #9ca3af;
+    }
+    .pwa-helper-sidebar textarea {
+      width: 100%;
+      min-height: 132px;
+      box-sizing: border-box;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      background: #111827;
+      color: #f3f4f6;
+      padding: 12px 14px;
+      font: inherit;
+      resize: vertical;
+    }
+    .pwa-helper-sidebar .save-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 18px;
+      background: #1d4ed8;
+      color: #ffffff;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
     }
     @keyframes pwa-orb-breathe {
       0%, 100% { transform: scale(0.96); opacity: 0.88; }
@@ -189,33 +255,23 @@ export async function showInlineHelper(tool: ToolRecord, analysis: AnalysisRecor
             </div>
           </div>
         </div>
-        <iframe class="pwa-helper-frame" title="${tool.name} helper"></iframe>
-        <aside
-          style="
-            position:absolute;
-            top:18px;
-            right:18px;
-            width:260px;
-            background:#ffffff;
-            border:1px solid rgba(148,163,184,0.24);
-            border-radius:16px;
-            box-shadow:0 12px 32px rgba(15,23,42,0.08);
-            padding:14px;
-            display:grid;
-            gap:12px;
-          ">
-          <div>
-            <strong style="display:block;margin-bottom:6px;">Why this helper?</strong>
-            <div style="font-size:0.9rem;color:#6b7280;line-height:1.45;">${whyText}</div>
-          </div>
-          <div>
-            <strong style="display:block;margin-bottom:6px;">Personalize it</strong>
-            <div style="font-size:0.85rem;color:#6b7280;margin-bottom:8px;">Tell Bob's assistant what to change next.</div>
-            <textarea data-chat-input placeholder="Example: make the tone warmer, add a total row, use Q3 tags." style="width:100%;min-height:88px;box-sizing:border-box;border-radius:12px;border:1px solid rgba(148,163,184,0.24);padding:10px 12px;font:inherit;"></textarea>
-            <button class="primary" data-action="save-preference" style="margin-top:8px;">Save preference</button>
-            <div data-chat-status style="margin-top:6px;font-size:0.84rem;color:#6b7280;">Saved preferences will affect future generations.</div>
-          </div>
-        </aside>
+        <div class="pwa-helper-shell" data-drawer-open="false">
+          <button class="pwa-helper-sidebar-toggle" data-action="toggle-drawer">Personalize</button>
+          <iframe class="pwa-helper-frame" title="${tool.name} helper"></iframe>
+          <aside class="pwa-helper-sidebar">
+            <div>
+              <strong style="display:block;margin-bottom:6px;">Why this helper?</strong>
+              <div style="font-size:0.9rem;line-height:1.5;">${whyText}</div>
+            </div>
+            <div>
+              <strong style="display:block;margin-bottom:6px;">Personalize it</strong>
+              <div style="font-size:0.85rem;margin-bottom:8px;">Adjust the helper after reviewing the first result.</div>
+              <textarea data-chat-input placeholder="Example: make the tone warmer, add a total row, use Q3 tags."></textarea>
+              <button class="save-button" data-action="save-preference" style="margin-top:10px;">Save preference</button>
+              <div data-chat-status style="margin-top:8px;font-size:0.84rem;">Saved preferences will affect future generations.</div>
+            </div>
+          </aside>
+        </div>
       </div>
     </section>
   `
@@ -238,6 +294,13 @@ export async function showInlineHelper(tool: ToolRecord, analysis: AnalysisRecor
     }
     if (action === "popout") {
       void sendExtensionMessage({ type: "extension/open-tool", toolId: tool.id })
+    }
+    if (action === "toggle-drawer") {
+      const shell = root.querySelector<HTMLElement>(".pwa-helper-shell")
+      const toggle = root.querySelector<HTMLElement>(".pwa-helper-sidebar-toggle")
+      const next = shell?.dataset.drawerOpen === "true" ? "false" : "true"
+      if (shell) shell.dataset.drawerOpen = next
+      if (toggle) toggle.textContent = next === "true" ? "Hide personalize" : "Personalize"
     }
     if (action === "save-preference") {
       const textarea = root.querySelector<HTMLTextAreaElement>("[data-chat-input]")
@@ -270,9 +333,9 @@ export async function showInlineHelper(tool: ToolRecord, analysis: AnalysisRecor
 
   const artifactUrl = backendApi.getArtifactUrl(tool.id)
   loadingText.textContent = "Reviewing the workflow and preparing the helper surface."
-  await wait(1500)
+  await wait(1200)
   loadingText.textContent = "Brewing the helper interface for this task."
-  await wait(1500)
+  await wait(1200)
 
   const frameLoaded = new Promise<void>((resolve) => {
     iframe.addEventListener("load", () => resolve(), { once: true })

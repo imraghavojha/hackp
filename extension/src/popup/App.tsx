@@ -90,22 +90,22 @@ export function PopupApp() {
         width: 360,
         minHeight: 420,
         padding: 18,
-        background: "#f3f4f6",
-        color: "#111827",
+        background: "#111827",
+        color: "#f3f4f6",
         fontFamily: '"IBM Plex Sans", "Segoe UI", sans-serif'
       }}>
       <section
         style={{
-          background: "#ffffff",
+          background: "#0f172a",
           border: "1px solid rgba(148, 163, 184, 0.22)",
           borderRadius: 16,
           padding: 16,
-          boxShadow: "0 10px 24px rgba(15, 23, 42, 0.08)"
+          boxShadow: "0 10px 24px rgba(15, 23, 42, 0.24)"
         }}>
         <h1 style={{ margin: "0 0 8px", fontSize: "1.1rem" }}>Personal Workflow Agent</h1>
-        <p style={{ margin: 0, color: "#6b7280", fontSize: "0.9rem" }}>{status}</p>
-        <p style={{ margin: "8px 0 0", color: "#6b7280", fontSize: "0.82rem" }}>
-          Signed in as <strong style={{ color: "#111827" }}>{settings?.userId ?? "bob"}</strong>
+        <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.9rem" }}>{status}</p>
+        <p style={{ margin: "8px 0 0", color: "#9ca3af", fontSize: "0.82rem" }}>
+          Signed in as <strong style={{ color: "#f3f4f6" }}>{settings?.userId ?? "bob"}</strong>
         </p>
       </section>
 
@@ -117,16 +117,16 @@ export function PopupApp() {
               borderRadius: 16,
               border: "1px solid rgba(148, 163, 184, 0.18)",
               padding: 14,
-              background: "#ffffff",
-              boxShadow: "0 8px 18px rgba(15, 23, 42, 0.05)"
+              background: "#0f172a",
+              boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)"
             }}>
             <div style={{ fontWeight: 700 }}>
               {currentAnalysis.transformation_name ?? "Repeated workflow detected"}
             </div>
-            <div style={{ color: "#6b7280", fontSize: "0.86rem", marginTop: 4 }}>
+            <div style={{ color: "#9ca3af", fontSize: "0.86rem", marginTop: 4 }}>
               {currentAnalysis.summary}
             </div>
-            <div style={{ color: "#6b7280", fontSize: "0.8rem", marginTop: 8 }}>
+            <div style={{ color: "#9ca3af", fontSize: "0.8rem", marginTop: 8 }}>
               Repetition count: {currentAnalysis.repetition_count}
               {" · "}
               Confidence: {currentAnalysis.confidence ?? "n/a"}
@@ -146,8 +146,8 @@ export function PopupApp() {
                 borderRadius: 16,
                 border: "1px solid rgba(148, 163, 184, 0.18)",
                 padding: 14,
-                color: "#6b7280",
-                background: "#ffffff"
+                color: "#9ca3af",
+                background: "#0f172a"
               }}>
               Visit a matching page and tool suggestions will start appearing here.
             </div>
@@ -159,12 +159,12 @@ export function PopupApp() {
                   borderRadius: 16,
                   border: "1px solid rgba(148, 163, 184, 0.18)",
                   padding: 14,
-                  background: "#ffffff",
-                  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.05)"
+                  background: "#0f172a",
+                  boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)"
                 }}>
                 <div style={{ fontWeight: 700 }}>{tool.name}</div>
-                <div style={{ color: "#6b7280", fontSize: "0.86rem", marginTop: 4 }}>{tool.description}</div>
-                <div style={{ color: "#6b7280", fontSize: "0.8rem", marginTop: 8 }}>
+                <div style={{ color: "#9ca3af", fontSize: "0.86rem", marginTop: 4 }}>{tool.description}</div>
+                <div style={{ color: "#9ca3af", fontSize: "0.8rem", marginTop: 8 }}>
                   Last seen: {tool.last_opened_at ?? tool.last_suggested_at ?? tool.stats?.last_used ?? "not yet"}
                 </div>
                 <button
@@ -175,9 +175,10 @@ export function PopupApp() {
                     borderRadius: 999,
                     background: "#1d4ed8",
                     color: "#ffffff",
-                    padding: "10px 14px",
+                    padding: "13px 18px",
                     fontWeight: 700,
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    fontSize: "0.95rem"
                   }}>
                   Open
                 </button>

@@ -30,12 +30,8 @@ function ensureToastStyles() {
       animation: pwa-slide-in 180ms ease-out forwards;
     }
     .pwa-toast[data-theme="dark"] {
-      background: #1f2937;
+      background: #111827;
       color: #f3f4f6;
-    }
-    .pwa-toast[data-theme="light"] {
-      background: #ffffff;
-      color: #111827;
     }
     .pwa-toast__inner {
       padding: 16px;
@@ -66,21 +62,17 @@ function ensureToastStyles() {
     .pwa-toast__button {
       border: 0;
       border-radius: 999px;
-      padding: 10px 14px;
+      padding: 13px 18px;
       font: inherit;
       font-weight: 700;
       cursor: pointer;
+      font-size: 0.95rem;
     }
     .pwa-toast__button--primary {
       background: #1d4ed8;
       color: #ffffff;
     }
     .pwa-toast__button--secondary {
-      background: #f8fafc;
-      color: #111827;
-      border: 1px solid rgba(148, 163, 184, 0.22);
-    }
-    .pwa-toast[data-theme="dark"] .pwa-toast__button--secondary {
       background: transparent;
       color: inherit;
       border: 1px solid rgba(148, 163, 184, 0.24);
@@ -91,7 +83,7 @@ function ensureToastStyles() {
       color: inherit;
       cursor: pointer;
       padding: 0;
-      font-size: 0.95rem;
+      font-size: 1rem;
     }
     .pwa-toast__menu {
       display: none;
@@ -134,7 +126,7 @@ export function showSuggestionToast(
       ? `This is at least the third time I've seen you do this. Want me to make a helper for it?`
       : tool.trigger.prompt
   root.innerHTML = `
-    <aside class="pwa-toast" data-theme="${tool.ui_prefs.theme ?? "dark"}">
+    <aside class="pwa-toast" data-theme="dark">
       <div class="pwa-toast__inner">
         <div class="pwa-toast__top">
           <div>
