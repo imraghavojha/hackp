@@ -20,9 +20,17 @@ from ai.mem0_wrapper.client import (
     infer_tag_pattern,
     infer_theme,
 )
+from ai.gemini_client import GeminiClient
 from ai.openai_compatible import OpenAICompatibleClient, OpenAICompatibleError
 from ai.prompts.detect import DETECT_SYSTEM_PROMPT
 from ai.prompts.generate import GENERATE_SYSTEM_PROMPT
+
+
+def _get_live_client():
+    settings = get_ai_settings()
+    if settings.provider == "gemini":
+        return GeminiClient(settings)
+    return OpenAICompatibleClient(settings)
 
 
 def detect_transformation(payload: dict[str, Any]) -> dict[str, Any]:
@@ -44,7 +52,7 @@ def detect_transformation(payload: dict[str, Any]) -> dict[str, Any]:
     if settings.mode == "heuristic" or not settings.live_enabled:
         return heuristic
 
-    client = OpenAICompatibleClient(settings)
+    client = _get_live_client()
     try:
         result = client.chat_json(
             system_prompt=DETECT_SYSTEM_PROMPT,
@@ -87,7 +95,7 @@ def generate_tool(payload: dict[str, Any]) -> dict[str, Any]:
     if settings.mode == "heuristic" or not settings.live_enabled:
         return heuristic_generate_response(domain, theme=theme, density=density, initials=initials, tag_pattern=tag_pattern)
 
-    client = OpenAICompatibleClient(settings)
+    client = _get_live_client()
     try:
         result = client.chat_json(
             system_prompt=GENERATE_SYSTEM_PROMPT,

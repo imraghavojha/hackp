@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import ssl
 from dataclasses import dataclass
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+import certifi
 
 from ai.config import AiSettings
 
@@ -39,6 +42,7 @@ def _extract_json_object(text: str) -> dict:
 class OpenAICompatibleClient:
     def __init__(self, settings: AiSettings):
         self.settings = settings
+        self._ssl_context = ssl.create_default_context(cafile=certifi.where())
 
     def chat_json(self, *, system_prompt: str, user_prompt: str, temperature: float = 0.1, max_tokens: int = 2_000) -> OpenAIChatResult:
         if not self.settings.live_enabled:
@@ -64,7 +68,7 @@ class OpenAICompatibleClient:
         )
 
         try:
-            with urlopen(request, timeout=self.settings.timeout_seconds) as response:
+            with urlopen(request, timeout=self.settings.timeout_seconds, context=self._ssl_context) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except (HTTPError, URLError, TimeoutError) as exc:
             raise OpenAICompatibleError(str(exc)) from exc
