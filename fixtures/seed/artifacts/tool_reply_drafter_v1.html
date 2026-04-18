@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Support Reply Drafter</title>
+    <style>
+      :root { --bg:#11131d; --surface:#171c2b; --fg:#e2e8f0; --muted:#94a3b8; --border:#374151; --accent:#22c55e; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 "IBM Plex Sans", sans-serif; }
+      main { max-width:860px; margin:40px auto; padding:24px; }
+      .shell { border:1px solid var(--border); border-radius:20px; padding:24px; background:var(--surface); }
+      textarea, pre { width:100%; box-sizing:border-box; min-height:180px; margin-top:16px; border-radius:14px; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:14px; font:inherit; }
+      button { margin-top:16px; border:0; border-radius:999px; padding:12px 18px; background:var(--accent); color:#062712; font-weight:700; cursor:pointer; }
+      .muted { color:var(--muted); margin-top:12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="shell">
+        <h1>Draft Customer Reply</h1>
+        <p>Paste a JSON object with `ticket` and `customer`, then get a calm reply draft.</p>
+        <textarea id="input-area" placeholder='{"ticket":{"ticket_id":"TICK-1"},"customer":{"name":"Jordan"}}'></textarea>
+        <button id="run-button">Draft Reply</button>
+        <div class="muted" id="status">Paste JSON input to begin.</div>
+        <pre id="preview">Draft preview will appear here.</pre>
+      </section>
+    </main>
+    <script>
+      window.Tool = {
+        metadata: {
+          id: "tool_reply_drafter_v1",
+          name: "Support Reply Drafter",
+          version: "1.0",
+          input_type: "json",
+          output_type: "text"
+        },
+        defaultConfig: {
+          tone: "calm and direct",
+          signoff: "Best,\nKai"
+        },
+        async transform(input, config = {}) {
+          const merged = { ...this.defaultConfig, ...config }
+          const payload = JSON.parse(String(input || "{}"))
+          const ticket = payload.ticket || {}
+          const customer = payload.customer || {}
+          return [
+            `Hi ${customer.name || "there"},`,
+            "",
+            `I'm sorry about the issue described in ticket ${ticket.ticket_id || "unknown"}.`,
+            `I reviewed the note about "${ticket.subject || "your request"}" and I'm moving this forward with priority.`,
+            `Because you're on the ${customer.plan || "current"} plan, I'll follow up as soon as I have the next update.`,
+            "",
+            merged.signoff,
+            `Tone: ${merged.tone}`
+          ].join("\\n")
+        }
+      }
+
+      const input = document.getElementById("input-area")
+      const preview = document.getElementById("preview")
+      const status = document.getElementById("status")
+      document.getElementById("run-button").addEventListener("click", async () => {
+        try {
+          preview.textContent = await window.Tool.transform(input.value)
+          status.textContent = "Draft ready to copy."
+        } catch (error) {
+          preview.textContent = `Error: ${error.message}`
+          status.textContent = "Input needs valid JSON."
+        }
+      })
+    </script>
+  </body>
+</html>

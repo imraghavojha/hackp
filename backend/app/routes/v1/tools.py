@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 
 from backend.app.contracts import ToolsForUrlResponse, ToolUsageRequest, ToolUsageResponse
-from backend.app.triggers.url_visit import matches_url
+from backend.app.triggers.url_visit import matches_tool_trigger
 
 
 router = APIRouter(prefix="/v1", tags=["tools"])
@@ -17,7 +17,7 @@ def get_tools_for_url(
     user_id: str = Query(...),
 ) -> ToolsForUrlResponse:
     repository = request.app.state.repository
-    tools = [tool for tool in repository.list_ready_tools_for_url(user_id) if matches_url(tool.trigger.url_pattern, url)]
+    tools = [tool for tool in repository.list_ready_tools_for_url(user_id) if matches_tool_trigger(tool.trigger, url)]
     return ToolsForUrlResponse(tools=tools)
 
 

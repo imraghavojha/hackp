@@ -43,11 +43,17 @@ class SourceEventWindow(BaseModel):
     repetition_count: int = 0
 
 
+class TriggerTimeWindow(BaseModel):
+    start: str
+    end: str
+    timezone: str
+
+
 class ToolTrigger(BaseModel):
     type: Literal["on_url_visit"] = "on_url_visit"
     url_pattern: str
     prompt: str
-    time_window: dict[str, str] | None = None
+    time_window: TriggerTimeWindow | None = None
 
 
 class ArtifactInputSpec(BaseModel):

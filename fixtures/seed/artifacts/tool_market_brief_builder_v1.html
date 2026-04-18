@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Market Brief Builder</title>
+    <style>
+      :root { --bg:#0a1322; --surface:#101a2d; --fg:#e2e8f0; --muted:#94a3b8; --border:#334155; --accent:#f59e0b; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 "IBM Plex Sans", sans-serif; }
+      main { max-width:860px; margin:40px auto; padding:24px; }
+      .shell { border:1px solid var(--border); border-radius:20px; padding:24px; background:var(--surface); }
+      textarea, pre { width:100%; box-sizing:border-box; min-height:180px; margin-top:16px; border-radius:14px; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:14px; font:inherit; }
+      button { margin-top:16px; border:0; border-radius:999px; padding:12px 18px; background:var(--accent); color:#18110a; font-weight:700; cursor:pointer; }
+      .muted { color:var(--muted); margin-top:12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="shell">
+        <h1>Build Analyst Brief</h1>
+        <p>Paste a JSON object with `tickers` and `market_data`, then get a concise watchlist brief.</p>
+        <textarea id="input-area" placeholder='{"tickers":["AAPL"],"market_data":{"AAPL":{"price":194.11,"market_cap":"3.0T"}}}'></textarea>
+        <button id="run-button">Build Brief</button>
+        <div class="muted" id="status">Paste JSON input to begin.</div>
+        <pre id="preview">Brief preview will appear here.</pre>
+      </section>
+    </main>
+    <script>
+      window.Tool = {
+        metadata: {
+          id: "tool_market_brief_builder_v1",
+          name: "Market Brief Builder",
+          version: "1.0",
+          input_type: "json",
+          output_type: "html"
+        },
+        defaultConfig: {
+          heading: "Morning Watchlist",
+          tone: "crisply analytical",
+          max_points: 3
+        },
+        async transform(input, config = {}) {
+          const brief = buildBrief(input, { ...this.defaultConfig, ...config })
+          return brief.html
+        }
+      }
+
+      function buildBrief(input, config) {
+        const payload = JSON.parse(String(input || "{}"))
+        const tickers = Array.isArray(payload.tickers) ? payload.tickers : []
+        const marketData = payload.market_data || {}
+        const items = tickers.slice(0, config.max_points).map((ticker) => {
+          const details = marketData[ticker] || {}
+          return `<li><strong>${ticker}</strong>: price ${details.price ?? "n/a"}, market cap ${details.market_cap ?? "n/a"}.</li>`
+        })
+        return {
+          html: `<section><h2>${config.heading}</h2><p>Tone: ${config.tone}</p><ul>${items.join("")}</ul></section>`
+        }
+      }
+
+      const input = document.getElementById("input-area")
+      const preview = document.getElementById("preview")
+      const status = document.getElementById("status")
+      document.getElementById("run-button").addEventListener("click", async () => {
+        try {
+          const html = await window.Tool.transform(input.value)
+          preview.textContent = html
+          status.textContent = "Brief ready to copy."
+        } catch (error) {
+          preview.textContent = `Error: ${error.message}`
+          status.textContent = "Input needs valid JSON."
+        }
+      })
+    </script>
+  </body>
+</html>

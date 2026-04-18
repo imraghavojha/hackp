@@ -7,6 +7,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from backend.app.artifacts.store import ArtifactStore
+from backend.app.artifacts.validator import validate_html_artifact
 from backend.app.contracts import (
     ArtifactInputSpec,
     ArtifactOutputSpec,
@@ -76,6 +77,7 @@ class DetectionScheduler:
         pending_events = self.repository.get_pending_events(user_id)
         if not pending_events or not self._threshold_reached(pending_events):
             return None
+        last_event_id = pending_events[-1]["id"]
 
         try:
             detection = self.ai_gateway.detect_transformation(
@@ -86,32 +88,25 @@ class DetectionScheduler:
                 }
             )
         except AiGatewayError:
+            self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
             return None
 
-        last_event_id = pending_events[-1]["id"]
         if not detection.get("detected"):
             self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
             return None
 
-        try:
-            generated = self.ai_gateway.generate_tool(
-                {
-                    "user_id": user_id,
-                    "detection": detection,
-                    "events": [self._strip_event_identifier(event) for event in pending_events],
-                    "user_prefs_hint": "\n".join(self.repository.recent_feedback(user_id)),
-                }
-            )
-        except AiGatewayError:
-            return None
-
-        html_artifact = generated["html_artifact"]
-        if "window.Tool" not in html_artifact or "transform(" not in html_artifact:
+        generated = self._generate_valid_artifact(
+            user_id=user_id,
+            detection=detection,
+            pending_events=pending_events,
+        )
+        if generated is None:
+            self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
             return None
 
         tool_id = f"tool_{detection['signature'].removeprefix('sig_')}_v1"
         artifact_id, artifact_path = self.artifact_store.create_artifact(
-            html_artifact,
+            generated["html_artifact"],
             preferred_id=f"art_{tool_id}",
         )
         self.repository.store_artifact_record(artifact_id=artifact_id, user_id=user_id, html_path=artifact_path)
@@ -125,6 +120,29 @@ class DetectionScheduler:
         self.repository.save_tool(tool)
         self.repository.mark_events_processed(user_id=user_id, last_event_id=last_event_id, detected_at=utc_now())
         return tool
+
+    def _generate_valid_artifact(
+        self,
+        *,
+        user_id: str,
+        detection: dict[str, Any],
+        pending_events: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        payload = {
+            "user_id": user_id,
+            "detection": detection,
+            "events": [self._strip_event_identifier(event) for event in pending_events],
+            "user_prefs_hint": "\n".join(self.repository.recent_feedback(user_id)),
+        }
+        for _attempt in range(2):
+            try:
+                generated = self.ai_gateway.generate_tool(payload)
+            except AiGatewayError:
+                return None
+            validation = validate_html_artifact(generated["html_artifact"])
+            if validation.is_valid:
+                return generated
+        return None
 
     def _threshold_reached(self, events: list[dict[str, Any]]) -> bool:
         if len(events) >= MIN_EVENTS_FOR_DETECTION:

@@ -1,16 +1,115 @@
 [
   {
     "id": "tool_lead_formatter_v1",
+    "user_id": "bob",
     "name": "Lead List Formatter",
     "description": "Formats lead exports into Bob's preferred spreadsheet output.",
+    "artifact_seed_path": "fixtures/seed/artifacts/tool_lead_formatter_v1.html",
     "trigger": {
       "type": "on_url_visit",
       "url_pattern": "portal.example.com/leads",
-      "prompt": "I built you a tool for this."
+      "prompt": "Ready to format today's leads?"
+    },
+    "transformation_summary": [
+      "Input: CSV of raw leads",
+      "Filter to Series B+ in fintech",
+      "Sort by company size descending",
+      "Add Bob's outbound tag column",
+      "Output: XLSX for CRM import"
+    ],
+    "input_spec": {
+      "primary_input": "csv_file",
+      "accepts": ["paste", "file_drop", "file_picker"],
+      "sample_fixture_id": "domain_a_leads"
+    },
+    "output_spec": {
+      "format": "xlsx",
+      "filename_pattern": "leads_{YYYY-MM-DD}.xlsx"
+    },
+    "primitives_used": ["papaparse", "sheetjs"],
+    "programmatic_interface": {
+      "input_type": "csv_string",
+      "output_type": "xlsx_blob"
     },
     "ui_prefs": {
       "theme": "dark",
-      "density": "compact"
+      "density": "compact",
+      "primary_label": "Format My Leads",
+      "show_preview": true
     }
+  },
+  {
+    "id": "tool_market_brief_builder_v1",
+    "user_id": "maya",
+    "name": "Market Brief Builder",
+    "description": "Turns a short ticker list into a compact analyst-ready watchlist brief.",
+    "artifact_seed_path": "fixtures/seed/artifacts/tool_market_brief_builder_v1.html",
+    "trigger": {
+      "type": "on_url_visit",
+      "url_pattern": "research.example.com/tickers",
+      "prompt": "Want a quick brief for these tickers?"
+    },
+    "transformation_summary": [
+      "Input: ticker list plus market data JSON",
+      "Rank and summarize the watchlist",
+      "Output: copy-ready HTML brief"
+    ],
+    "input_spec": {
+      "primary_input": "json",
+      "accepts": ["paste"]
+    },
+    "output_spec": {
+      "format": "html",
+      "filename_pattern": "market_brief_{YYYY-MM-DD}.html"
+    },
+    "primitives_used": [],
+    "programmatic_interface": {
+      "input_type": "json",
+      "output_type": "html"
+    },
+    "ui_prefs": {
+      "theme": "dark",
+      "density": "compact",
+      "primary_label": "Build Brief",
+      "show_preview": true
+    },
+    "signature": "sig_domain_b_market_brief"
+  },
+  {
+    "id": "tool_reply_drafter_v1",
+    "user_id": "kai",
+    "name": "Support Reply Drafter",
+    "description": "Drafts a calm, context-aware reply from a ticket and customer profile.",
+    "artifact_seed_path": "fixtures/seed/artifacts/tool_reply_drafter_v1.html",
+    "trigger": {
+      "type": "on_url_visit",
+      "url_pattern": "support.example.com/tickets",
+      "prompt": "I drafted a reply for this ticket."
+    },
+    "transformation_summary": [
+      "Input: ticket JSON and customer JSON",
+      "Generate a concise empathetic reply",
+      "Output: copy-ready text draft"
+    ],
+    "input_spec": {
+      "primary_input": "json",
+      "accepts": ["paste"]
+    },
+    "output_spec": {
+      "format": "text",
+      "filename_pattern": "reply_{YYYY-MM-DD}.txt"
+    },
+    "primitives_used": [],
+    "programmatic_interface": {
+      "input_type": "json",
+      "output_type": "text"
+    },
+    "ui_prefs": {
+      "theme": "dark",
+      "density": "compact",
+      "primary_label": "Draft Reply",
+      "show_preview": true
+    },
+    "signature": "sig_domain_c_reply_drafter"
   }
 ]

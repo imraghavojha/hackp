@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
@@ -58,11 +59,17 @@ class ToolOrchestrator:
         )
 
     def _preview_known_tool(self, *, tool_id: str, input_data: Any, config_override: dict[str, Any]) -> list[list[str]] | None:
-        if tool_id not in {"tool_lead_formatter_v1", "tool_domain_a_lead_formatter_v1"}:
-            return None
         if not isinstance(input_data, str) or not input_data.strip():
             return None
+        if tool_id in {"tool_lead_formatter_v1", "tool_domain_a_lead_formatter_v1"}:
+            return self._preview_lead_formatter(input_data=input_data, config_override=config_override)
+        if tool_id == "tool_market_brief_builder_v1":
+            return self._preview_market_brief(input_data=input_data)
+        if tool_id == "tool_reply_drafter_v1":
+            return self._preview_reply_drafter(input_data=input_data, config_override=config_override)
+        return None
 
+    def _preview_lead_formatter(self, *, input_data: str, config_override: dict[str, Any]) -> list[list[str]] | None:
         rows = list(csv.reader(io.StringIO(input_data)))
         if len(rows) < 2:
             return rows
@@ -96,3 +103,36 @@ class ToolOrchestrator:
             tag = tag_pattern.replace("{industry}", industry_token).replace("{initials}", initials)
             preview_rows.append(row + [tag])
         return preview_rows
+
+    def _preview_market_brief(self, *, input_data: str) -> list[list[str]] | None:
+        try:
+            payload = json.loads(input_data)
+        except json.JSONDecodeError:
+            return [["error", "Expected JSON input for the market brief tool"]]
+
+        tickers = payload.get("tickers", [])
+        market_data = payload.get("market_data", {})
+        rows = [["Ticker", "Price", "Market Cap", "Summary"]]
+        for ticker in tickers:
+            details = market_data.get(ticker, {})
+            summary = f"{ticker} is trading at {details.get('price', 'n/a')} with market cap {details.get('market_cap', 'n/a')}."
+            rows.append([ticker, str(details.get("price", "n/a")), str(details.get("market_cap", "n/a")), summary])
+        return rows
+
+    def _preview_reply_drafter(self, *, input_data: str, config_override: dict[str, Any]) -> list[list[str]] | None:
+        try:
+            payload = json.loads(input_data)
+        except json.JSONDecodeError:
+            return [["error", "Expected JSON input for the reply drafter tool"]]
+
+        ticket = payload.get("ticket", {})
+        customer = payload.get("customer", {})
+        tone = config_override.get("tone", "calm and direct")
+        reply = (
+            f"Hi {customer.get('name', 'there')},\n\n"
+            f"I'm sorry about the issue described in ticket {ticket.get('ticket_id', 'unknown')}.\n"
+            f"I reviewed the note about \"{ticket.get('subject', 'your request')}\" and I'm moving this forward with priority.\n"
+            f"Because you're on the {customer.get('plan', 'current')} plan, I'll follow up as soon as I have the next update.\n\n"
+            f"Best,\nKai\nTone: {tone}"
+        )
+        return [["draft_reply"], [reply]]

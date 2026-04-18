@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lead List Formatter</title>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+      :root { --bg:#09111f; --fg:#e2e8f0; --muted:#94a3b8; --border:#334155; --accent:#38bdf8; }
+      body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 "IBM Plex Sans", sans-serif; }
+      main { max-width:760px; margin:40px auto; padding:24px; }
+      .shell { border:1px solid var(--border); border-radius:20px; padding:24px; background:#0f172a; }
+      textarea, pre { width:100%; box-sizing:border-box; min-height:180px; margin-top:16px; border-radius:14px; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:14px; font:inherit; }
+      .actions { display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; }
+      button { border:0; border-radius:999px; padding:12px 18px; font-weight:700; cursor:pointer; }
+      .primary { background:var(--accent); color:#04131d; }
+      .secondary { background:transparent; color:var(--fg); border:1px solid var(--border); }
+      .status { color:var(--muted); margin-top:12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="shell">
+        <h1>Format My Leads</h1>
+        <p>Drop your raw lead CSV, preview the cleaned rows, then download the CRM-ready workbook.</p>
+        <textarea id="input-area" placeholder="company,industry,stage,employees,domain"></textarea>
+        <div class="actions">
+          <button id="preview-button" class="secondary">Preview</button>
+          <button id="download-button" class="primary">Download XLSX</button>
+        </div>
+        <div class="status" id="status">Paste CSV rows to begin.</div>
+        <pre id="preview">Preview will appear here.</pre>
+      </section>
+    </main>
+    <script>
+      const STAGE_RANK = { seed: 0, series_a: 1, series_b: 2, series_c: 3, series_d: 4, ipo: 5 }
+      window.Tool = {
+        metadata: {
+          id: "tool_lead_formatter_v1",
+          name: "Lead List Formatter",
+          version: "1.0",
+          input_type: "csv_string",
+          output_type: "xlsx_blob"
+        },
+        defaultConfig: {
+          industry: "Fintech",
+          filter_min_stage: "series_b",
+          initials: "BK",
+          tag_pattern: "[Q2-Outbound-{industry}-{initials}]"
+        },
+        async transform(input, config = {}) {
+          const rows = buildRows(input, { ...this.defaultConfig, ...config })
+          if (!rows.length) {
+            return new Blob([""], { type: "text/plain;charset=utf-8" })
+          }
+          const worksheet = window.XLSX.utils.aoa_to_sheet(rows)
+          const workbook = window.XLSX.utils.book_new()
+          window.XLSX.utils.book_append_sheet(workbook, worksheet, "Leads")
+          const array = window.XLSX.write(workbook, { bookType: "xlsx", type: "array" })
+          return new Blob([array], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+        }
+      }
+
+      function buildRows(input, config) {
+        const parsed = window.Papa.parse(String(input || "").trim(), { skipEmptyLines: true }).data
+        if (!parsed.length) return []
+        const [header, ...body] = parsed
+        const index = Object.fromEntries(header.map((name, position) => [String(name).trim().toLowerCase(), position]))
+        const industryIndex = index["industry"]
+        const stageIndex = index["stage"]
+        const employeesIndex = index["employees"]
+        return [
+          [...header, "tag"],
+          ...body
+            .filter((row) => String(row[industryIndex] || "").toLowerCase().includes(String(config.industry).toLowerCase()))
+            .filter((row) => (STAGE_RANK[String(row[stageIndex] || "").trim().toLowerCase().replace(/\\s+/g, "_")] || 0) >= STAGE_RANK[config.filter_min_stage])
+            .sort((left, right) => Number(right[employeesIndex] || 0) - Number(left[employeesIndex] || 0))
+            .map((row) => {
+              const industryToken = String(row[industryIndex] || "Fintech").replace(/\\s+/g, "")
+              const tag = config.tag_pattern.replaceAll("{industry}", industryToken).replaceAll("{initials}", config.initials)
+              return [...row, tag]
+            })
+        ]
+      }
+
+      const input = document.getElementById("input-area")
+      const preview = document.getElementById("preview")
+      const status = document.getElementById("status")
+      document.getElementById("preview-button").addEventListener("click", () => {
+        const rows = buildRows(input.value, window.Tool.defaultConfig)
+        preview.textContent = rows.length ? rows.map((row) => row.join(" | ")).join("\\n") : "No matching rows."
+        status.textContent = rows.length ? `Preview ready: ${Math.max(rows.length - 1, 0)} rows.` : "No matching rows."
+      })
+      document.getElementById("download-button").addEventListener("click", async () => {
+        const blob = await window.Tool.transform(input.value)
+        const url = URL.createObjectURL(blob)
+        const anchor = document.createElement("a")
+        anchor.href = url
+        anchor.download = `leads_${new Date().toISOString().slice(0, 10)}.xlsx`
+        anchor.click()
+        URL.revokeObjectURL(url)
+        status.textContent = "Download started."
+      })
+    </script>
+  </body>
+</html>
