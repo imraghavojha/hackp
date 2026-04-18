@@ -115,7 +115,11 @@ export interface ToastHandle {
   dispose: () => void
 }
 
-export function showSuggestionToast(tool: ToolRecord, origin: string): ToastHandle {
+export function showSuggestionToast(
+  tool: ToolRecord,
+  origin: string,
+  onOpen: () => void
+): ToastHandle {
   ensureToastStyles()
 
   const existing = document.getElementById(TOAST_ROOT_ID)
@@ -160,7 +164,7 @@ export function showSuggestionToast(tool: ToolRecord, origin: string): ToastHand
     }
 
     if (action === "open") {
-      void sendExtensionMessage({ type: "extension/open-tool", toolId: tool.id })
+      onOpen()
       dispose()
       return
     }

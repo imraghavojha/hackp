@@ -1,5 +1,6 @@
 import { buildObservedEvent, buildTarget } from "./capture"
 import { mountArtifactFeedback } from "./feedback"
+import { showInlineHelper } from "./helper-overlay"
 import { pickSuggestedTool } from "./index"
 import { isDeniedUrl } from "./privacy"
 import { startRrwebSession } from "./rrweb"
@@ -17,6 +18,7 @@ interface ObserverContext {
   sessionId: string
   userId: string
   currentToast: { dispose: () => void } | null
+  currentHelper: { dispose: () => void } | null
 }
 
 function createSessionId(): string {
@@ -123,7 +125,12 @@ async function recordNavigation(context: ObserverContext, reason: string) {
 
   context.currentToast?.dispose()
   globalThis.setTimeout(() => {
-    context.currentToast = showSuggestionToast(tool, window.location.origin)
+    context.currentToast = showSuggestionToast(tool, window.location.origin, () => {
+      void showInlineHelper(tool).then((handle) => {
+        context.currentHelper?.dispose()
+        context.currentHelper = handle
+      })
+    })
   }, POPUP_DELAY_MS)
 }
 
@@ -162,7 +169,8 @@ export async function bootstrapContentObserver(): Promise<void> {
     rrwebCount: rrwebSession.getEventCount,
     sessionId: createSessionId(),
     userId: settings.userId,
-    currentToast: null
+    currentToast: null,
+    currentHelper: null
   }
 
   const enqueueRawEvent = async (
@@ -281,10 +289,14 @@ export async function bootstrapContentObserver(): Promise<void> {
   )
 
   observeHistory((reason) => {
+    context.currentHelper?.dispose()
+    context.currentHelper = null
     void recordNavigation(context, reason)
   })
 
   window.addEventListener("beforeunload", () => {
+    context.currentHelper?.dispose()
+    context.currentHelper = null
     void recordNavigation(context, "beforeunload")
   })
 
