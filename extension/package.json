@@ -23,7 +23,11 @@
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:prepare": "rm -rf .test-dist && tsc -p tsconfig.tests.json && mkdir -p .test-dist && printf '{\"type\":\"commonjs\"}\\n' > .test-dist/package.json",
+    "test:unit": "npm run test:prepare && node --test tests/unit/*.test.cjs",
+    "test:build-manifest": "npm run build && node --test tests/build/*.test.cjs",
+    "test": "npm run typecheck && npm run test:unit && npm run test:build-manifest"
   },
   "dependencies": {
     "plasmo": "^0.90.0",
