@@ -4,10 +4,13 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.artifacts.store import ArtifactStore
 from backend.app.config import Settings
+from backend.app.demo.showcase_store import ShowcaseDemoStore
 from backend.app.orchestrator.service import ToolOrchestrator
+from backend.app.routes.demo.showcase import router as showcase_demo_router
 from backend.app.registry.tools import ToolRegistry
 from backend.app.routes.internal.artifacts import router as artifacts_router
 from backend.app.routes.internal.orchestrator import router as orchestrator_router
@@ -26,6 +29,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     database.initialize()
     repository = PlatformRepository(database)
     artifact_store = ArtifactStore(settings.artifacts_dir)
+    showcase_demo_store = ShowcaseDemoStore(settings.demo_state_path)
     registry = ToolRegistry(repository=repository, artifact_store=artifact_store, settings=settings)
     registry.ensure_seed_data()
     orchestrator = ToolOrchestrator(repository=repository, artifact_store=artifact_store)
@@ -55,6 +59,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 await stop_scheduler_task(task, scheduler_runner)
 
     app = FastAPI(title="Personal Workflow Agent Backend", version="0.1.0", lifespan=lifespan)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://127.0.0.1:8012",
+            "http://127.0.0.1:8013",
+            "http://127.0.0.1:8014",
+            "http://localhost:8012",
+            "http://localhost:8013",
+            "http://localhost:8014",
+            "null",
+        ],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.state.settings = settings
     app.state.repository = repository
     app.state.artifact_store = artifact_store
@@ -62,12 +81,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.orchestrator = orchestrator
     app.state.scheduler = scheduler
     app.state.scheduler_runner = scheduler_runner
+    app.state.showcase_demo_store = showcase_demo_store
 
     app.include_router(events_router)
     app.include_router(tools_router)
     app.include_router(feedback_router)
     app.include_router(artifacts_router)
     app.include_router(orchestrator_router)
+    app.include_router(showcase_demo_router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

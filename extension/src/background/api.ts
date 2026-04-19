@@ -44,6 +44,11 @@ export const backendApi = {
     return data.analysis
   },
 
+  async getShowcaseState(): Promise<Record<string, unknown>> {
+    const response = await fetch(`${BACKEND_BASE_URL}/demo/showcase/state`)
+    return parseJsonResponse<Record<string, unknown>>(response)
+  },
+
   getArtifactUrl(toolId: string): string {
     return `${BACKEND_BASE_URL}/v1/tools/${toolId}/artifact`
   },

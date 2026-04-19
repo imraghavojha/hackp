@@ -23,7 +23,8 @@
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "showcase:launch": "node scripts/showcase-launch.mjs"
   },
   "dependencies": {
     "plasmo": "^0.90.0",

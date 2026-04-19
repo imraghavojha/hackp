@@ -14,22 +14,22 @@ function ensureOverlayStyles() {
   style.textContent = `
     #${OVERLAY_ROOT_ID} {
       position: fixed;
-      inset: 0;
+      top: 18px;
+      right: 18px;
+      bottom: 18px;
+      width: min(520px, calc(100vw - 28px));
       z-index: 2147483647;
-      display: grid;
-      place-items: center;
-      background: rgba(15, 23, 42, 0.18);
-      backdrop-filter: blur(6px);
+      display: block;
       font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
     }
     .pwa-helper-card {
-      width: min(760px, calc(100vw - 32px));
-      height: min(84vh, 900px);
-      background: #111827;
-      color: #f3f4f6;
-      border: 1px solid rgba(148, 163, 184, 0.22);
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      color: #111827;
+      border: 1px solid rgba(148, 163, 184, 0.24);
       border-radius: 22px;
-      box-shadow: 0 24px 64px rgba(15, 23, 42, 0.24);
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
       overflow: hidden;
       display: grid;
       grid-template-rows: auto 1fr;
@@ -41,7 +41,7 @@ function ensureOverlayStyles() {
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      background: #0f172a;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
     }
     .pwa-helper-title {
       font-size: 1.08rem;
@@ -50,7 +50,7 @@ function ensureOverlayStyles() {
     }
     .pwa-helper-subtitle {
       font-size: 0.9rem;
-      color: #9ca3af;
+      color: #667085;
       margin: 4px 0 0;
     }
     .pwa-helper-actions {
@@ -73,23 +73,23 @@ function ensureOverlayStyles() {
       color: #ffffff;
     }
     .pwa-helper-actions .secondary {
-      background: #374151;
-      color: #f3f4f6;
+      background: #f5f7fb;
+      color: #111827;
     }
     .pwa-helper-actions .ghost {
       background: transparent;
-      color: #d1d5db;
+      color: #667085;
     }
     .pwa-helper-body {
       position: relative;
-      background: #111827;
+      background: #ffffff;
     }
     .pwa-helper-loader {
       position: absolute;
       inset: 0;
       display: grid;
       place-items: center;
-      background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+      background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
     }
     .pwa-helper-loader[data-hidden="true"] {
       display: none;
@@ -125,10 +125,10 @@ function ensureOverlayStyles() {
     .pwa-helper-loader__title {
       font-size: 1.15rem;
       font-weight: 700;
-      color: #f3f4f6;
+      color: #111827;
     }
     .pwa-helper-loader__text {
-      color: #9ca3af;
+      color: #667085;
       max-width: 420px;
       line-height: 1.45;
     }
@@ -136,7 +136,7 @@ function ensureOverlayStyles() {
       border: 0;
       width: 100%;
       height: 100%;
-      background: #111827;
+      background: #ffffff;
     }
     .pwa-helper-shell {
       position: relative;
@@ -156,18 +156,18 @@ function ensureOverlayStyles() {
       border: 0;
       border-radius: 999px;
       padding: 12px 18px;
-      background: rgba(17, 24, 39, 0.96);
-      color: #f3f4f6;
+      background: rgba(255, 255, 255, 0.96);
+      color: #111827;
       font: inherit;
       font-weight: 700;
       font-size: 0.95rem;
       cursor: pointer;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
     }
     .pwa-helper-sidebar {
       border-left: 1px solid rgba(148, 163, 184, 0.18);
-      background: #0f172a;
-      color: #f3f4f6;
+      background: #f8fbff;
+      color: #111827;
       padding: 18px;
       display: none;
       gap: 14px;
@@ -178,7 +178,7 @@ function ensureOverlayStyles() {
     }
     .pwa-helper-sidebar div,
     .pwa-helper-sidebar p {
-      color: #9ca3af;
+      color: #667085;
     }
     .pwa-helper-sidebar textarea {
       width: 100%;
@@ -186,8 +186,8 @@ function ensureOverlayStyles() {
       box-sizing: border-box;
       border-radius: 12px;
       border: 1px solid rgba(148, 163, 184, 0.24);
-      background: #111827;
-      color: #f3f4f6;
+      background: #ffffff;
+      color: #111827;
       padding: 12px 14px;
       font: inherit;
       resize: vertical;

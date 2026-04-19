@@ -1,4 +1,5 @@
 import { buildObservedEvent, buildTarget } from "./capture"
+import { backendApi } from "../background/api"
 import { mountArtifactFeedback } from "./feedback"
 import { showInlineHelper } from "./helper-overlay"
 import { pickSuggestedTool } from "./index"
@@ -106,6 +107,10 @@ function findNavigatingAnchor(target: EventTarget | null): HTMLAnchorElement | n
   return anchor instanceof HTMLAnchorElement ? anchor : null
 }
 
+function isShowcasePortalUrl(url: string): boolean {
+  return url.includes("portal.example.com/leads")
+}
+
 function clearScheduledRefreshes(context: ObserverContext) {
   for (const timerId of context.refreshTimers) {
     globalThis.clearTimeout(timerId)
@@ -181,16 +186,37 @@ async function refreshSuggestion(
       return
     }
 
+    let allowSeedFallback = context.repeatedActionCount >= 3
+    let suppressSuggestion = false
+    if (isShowcasePortalUrl(window.location.href)) {
+      try {
+        const showcaseState = await backendApi.getShowcaseState()
+        const currentDay = Number(showcaseState.current_day ?? 1)
+        const workflow = (showcaseState.workflow ?? {}) as { times_seen?: number }
+        const readyForSuggestion = currentDay >= 2 && Number(workflow.times_seen ?? 0) >= 1
+        allowSeedFallback = allowSeedFallback || readyForSuggestion
+        suppressSuggestion = !readyForSuggestion
+      } catch {
+        suppressSuggestion = true
+      }
+    }
+
     const response = await sendExtensionMessage({
       type: "extension/fetch-tools-for-url",
       url: window.location.href,
-      allowSeedFallback: context.repeatedActionCount >= 3
+      allowSeedFallback
     })
     const analysisResponse = await sendExtensionMessage({
       type: "extension/fetch-analysis-for-url",
       url: window.location.href
     })
     const analysis = analysisResponse.ok ? analysisResponse.analysis ?? null : null
+
+    if (suppressSuggestion) {
+      context.currentToast?.dispose()
+      context.currentToast = null
+      return
+    }
 
     if (!response.ok || !response.tools || response.tools.length === 0) {
       context.currentToast?.dispose()

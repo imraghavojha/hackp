@@ -121,8 +121,11 @@ export function showSuggestionToast(
   const root = document.createElement("div")
   root.id = TOAST_ROOT_ID
   root.dataset.extensionOwned = "true"
+  const isShowcaseWorkflow = tool.trigger.url_pattern.includes("portal.example.com/leads")
   const prompt =
-    analysis && analysis.repetition_count >= 3
+    analysis && isShowcaseWorkflow && analysis.repetition_count >= 1
+      ? `I’ve seen this sequence before. Want me to turn it into a workflow?`
+      : analysis && analysis.repetition_count >= 3
       ? `This is at least the third time I've seen you do this. Want me to make a helper for it?`
       : tool.trigger.prompt
   root.innerHTML = `
@@ -136,7 +139,7 @@ export function showSuggestionToast(
           <button class="pwa-toast__ghost" data-action="dismiss" aria-label="Dismiss">×</button>
         </div>
         <div class="pwa-toast__controls">
-          <button class="pwa-toast__button pwa-toast__button--primary" data-action="open">Open helper</button>
+          <button class="pwa-toast__button pwa-toast__button--primary" data-action="open">${isShowcaseWorkflow ? "Open workflow" : "Open helper"}</button>
           <button class="pwa-toast__button pwa-toast__button--secondary" data-action="not-now">Not now</button>
           <button class="pwa-toast__ghost" data-action="menu">Options</button>
         </div>
