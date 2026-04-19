@@ -39,6 +39,13 @@
         font: 14px/1.55 "Manrope", sans-serif;
       }
 
+      body[data-day-phase="night"] {
+        background:
+          radial-gradient(circle at top right, rgba(99, 102, 241, 0.16), transparent 28%),
+          radial-gradient(circle at left 24%, rgba(56, 189, 248, 0.08), transparent 24%),
+          linear-gradient(180deg, #edf3ff 0%, #dde8fb 100%);
+      }
+
       button, input, textarea {
         font: inherit;
       }
@@ -98,7 +105,8 @@
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
-        display: none;
+        display: inline-flex;
+        align-items: center;
       }
 
       .ext-pill {
@@ -191,6 +199,10 @@
         display: flex;
         align-items: center;
         gap: 12px;
+      }
+
+      body[data-day-phase="night"] .day-strip {
+        background: linear-gradient(90deg, #111827, #1d3557 58%, #334155);
       }
 
       .day-pill {
@@ -878,6 +890,7 @@
       .graph-ball.step { background: linear-gradient(180deg, #ede9fe, #ddd6fe); }
       .graph-ball.memory { background: linear-gradient(180deg, #fee2e2, #fecaca); }
       .graph-ball.tool { background: linear-gradient(180deg, #fef3c7, #fde68a); }
+      .graph-ball.formula { background: linear-gradient(180deg, #fde68a, #fcd34d); }
       .graph-ball.email { background: linear-gradient(180deg, #cffafe, #a5f3fc); }
       .graph-ball.update { background: linear-gradient(180deg, #d9f99d, #bef264); }
 
@@ -1096,6 +1109,45 @@
         gap: 14px;
       }
 
+      .tool-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .tool-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 7px 12px;
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid rgba(95, 126, 176, 0.18);
+        color: #23446d;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .tool-dropzone {
+        border: 1px dashed rgba(37, 99, 235, 0.32);
+        border-radius: 18px;
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.86);
+        color: #32527d;
+        text-align: center;
+        transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+      }
+
+      .tool-dropzone.ready {
+        cursor: pointer;
+      }
+
+      .tool-dropzone.dragover {
+        transform: translateY(-1px) scale(1.01);
+        border-color: rgba(37, 99, 235, 0.72);
+        background: rgba(232, 240, 255, 0.96);
+      }
+
       .tool-preview button {
         border: 0;
         border-radius: 999px;
@@ -1198,12 +1250,14 @@
       }
 
       .overlay-card {
-        width: min(440px, calc(100vw - 32px));
+        width: min(560px, calc(100vw - 32px));
         border-radius: 24px;
         padding: 30px;
-        background: white;
-        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+        background: linear-gradient(180deg, rgba(10, 24, 47, 0.96), rgba(18, 36, 67, 0.98));
+        color: white;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.32);
         text-align: center;
+        overflow: hidden;
       }
 
       .overlay-card h2 {
@@ -1213,7 +1267,69 @@
 
       .overlay-card p {
         margin: 0;
-        color: var(--muted);
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .overlay-scene {
+        position: relative;
+        height: 170px;
+        margin: -8px -8px 18px;
+        border-radius: 20px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at top, rgba(96, 165, 250, 0.3), transparent 34%),
+          linear-gradient(180deg, #10203a 0%, #182e4d 54%, #0f172a 100%);
+      }
+
+      .overlay-orbit {
+        position: absolute;
+        inset: -36px -120px auto;
+        height: 260px;
+        transform-origin: center 130px;
+        transition: transform 1300ms cubic-bezier(0.2, 0.9, 0.2, 1);
+      }
+
+      .overlay.show .overlay-orbit {
+        transform: rotate(188deg);
+      }
+
+      .sky-body {
+        position: absolute;
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        box-shadow: 0 0 24px rgba(255, 255, 255, 0.26);
+      }
+
+      .sky-body.sun {
+        left: 110px;
+        top: 28px;
+        background: radial-gradient(circle at 35% 35%, #fff7b2, #f59e0b 72%);
+      }
+
+      .sky-body.moon {
+        right: 110px;
+        top: 28px;
+        background: radial-gradient(circle at 35% 35%, #ffffff, #bfdbfe 72%);
+      }
+
+      .sky-stars {
+        position: absolute;
+        inset: 0;
+        background-image:
+          radial-gradient(circle at 18% 22%, rgba(255,255,255,0.7) 0 1px, transparent 1.6px),
+          radial-gradient(circle at 62% 18%, rgba(255,255,255,0.6) 0 1px, transparent 1.6px),
+          radial-gradient(circle at 82% 34%, rgba(255,255,255,0.75) 0 1px, transparent 1.6px),
+          radial-gradient(circle at 42% 40%, rgba(255,255,255,0.55) 0 1px, transparent 1.6px);
+        opacity: 0.72;
+      }
+
+      .sky-ground {
+        position: absolute;
+        inset: auto -10% -30px;
+        height: 86px;
+        border-radius: 50%;
+        background: linear-gradient(180deg, rgba(15, 118, 110, 0.14), rgba(8, 47, 73, 0.6));
       }
 
       .hidden {
@@ -1516,21 +1632,21 @@
                         <div class="excel-group">
                           <div class="excel-group-label">Review math</div>
                           <div class="excel-group-buttons">
-                            <button id="addSumButton">Sum headcount</button>
-                            <button id="addCountButton">Count Series B</button>
+                            <button id="addSumButton">Add column</button>
+                            <button id="addCountButton">Name column</button>
                           </div>
                         </div>
                         <div class="excel-group">
                           <div class="excel-group-label">Priority</div>
                           <div class="excel-group-buttons">
-                            <button id="seedPriorityFormulaButton">Priority formula</button>
-                            <button id="fillDownButton">Fill down</button>
+                            <button id="seedPriorityFormulaButton">Write formula</button>
+                            <button id="fillDownButton">Drag fill</button>
                           </div>
                         </div>
                         <div class="excel-group">
                           <div class="excel-group-label">Workbook</div>
                           <div class="excel-group-buttons">
-                            <button class="primary-btn" id="saveXlsxButton">Save a copy</button>
+                            <button class="primary-btn" id="saveXlsxButton">Save workbook</button>
                           </div>
                         </div>
                       </div>
@@ -1538,7 +1654,7 @@
                       <div class="formula-bar">
                         <div class="formula-ref" id="formulaRef">A1</div>
                         <div class="formula-token">fx</div>
-                        <input class="formula-input" id="formulaBarInput" value="company" />
+                        <input class="formula-input" id="formulaBarInput" value="" placeholder='=IF(D2>=200,"Tier 1","Tier 2")' />
                         <button class="secondary-btn" id="applyFormulaButton">Enter</button>
                         <button class="secondary-btn" id="clearFormulaButton">Clear</button>
                       </div>
@@ -1638,8 +1754,8 @@
                       </div>
                       <div class="mail-detail-body" id="mailDetailBody">The latest reviewer note will appear here.</div>
                       <div class="mail-compose">
-                        <input type="hidden" id="sampleMailSubject" value="Please add an Analyst Revision column and flag rows I need to review" />
-                        <textarea id="sampleMailBody" class="hidden" rows="6">For tomorrow's review workflow, add an Analyst Revision column, highlight companies with changed ownership, and keep the main action easy to click during review.</textarea>
+                        <input type="hidden" id="sampleMailSubject" value="Please update the Priority formula for tomorrow's workbook" />
+                        <textarea id="sampleMailBody" class="hidden" rows="6">For tomorrow, update the Priority column so Series C rows become "Fast Track" and everything else becomes "Review".</textarea>
                         <div style="display:flex;gap:10px;flex-wrap:wrap;">
                           <button class="primary-btn" id="injectMailButton">Refresh inbox</button>
                           <button class="secondary-btn" id="syncMailButton">Connect Gmail</button>
@@ -1712,16 +1828,18 @@
             </div>
           </div>
           <div class="tool-preview" style="padding:14px;">
-            <div class="sidebar-meta">Ready to run against today's shortlist.</div>
+            <div class="sidebar-meta" id="toolPreviewLead">Ready to run against today's shortlist.</div>
+            <div class="tool-pills" id="toolRecipePills"></div>
+            <div class="tool-dropzone" id="toolDropzone">Drop a CSV here after the tool is created. The workbook will reopen with the formula already filled down.</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
               <button id="toolPrimaryButton" class="size-medium">Prepare workbook</button>
-              <button class="secondary-btn" id="useToolButton">Preview result</button>
+              <button class="secondary-btn" id="useToolButton">Use today's CSV</button>
             </div>
             <div class="sidebar-meta" id="toolPreviewSummary"></div>
           </div>
           <div class="tool-request">
-            <strong>Fine-tune the sidecar</strong>
-            <textarea id="toolRequestInput" rows="3" placeholder="Example: make the main action easier to hit during review.">make button bigger</textarea>
+            <strong>Ask for a tool tweak</strong>
+            <textarea id="toolRequestInput" rows="3" placeholder='Example: use "Hot" and "Watch" at 150 employees.'>use "Hot" and "Watch" at 150 employees</textarea>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
               <button class="primary-btn" id="applyPreferenceButton">Save change</button>
               <button class="secondary-btn" id="extensionSecondaryAction">Later</button>
@@ -1759,6 +1877,14 @@
 
     <div class="overlay" id="dayOverlay">
       <div class="overlay-card">
+        <div class="overlay-scene">
+          <div class="sky-stars"></div>
+          <div class="overlay-orbit">
+            <div class="sky-body sun"></div>
+            <div class="sky-body moon"></div>
+          </div>
+          <div class="sky-ground"></div>
+        </div>
         <h2 id="overlayTitle">Next day</h2>
         <p id="overlayText">The workspace returns with the previous activity already connected and ready to reuse.</p>
       </div>
@@ -1787,20 +1913,22 @@
         { company: "Kinetic Bank", model: "Core banking", stage: "Series B", employees: 95, owner: "Bob" }
       ];
 
+      function cloneRows(rows) {
+        return rows.map((row) => ({ ...row }));
+      }
+
+      function createWorkbookState() {
+        return {
+          rows: cloneRows(CSV_ROWS),
+          headerOverrides: {},
+          selectedCell: "A1",
+          latestCsvName: "fintech_shortlist_2026-04-16.csv"
+        };
+      }
+
       const state = {
         backend: null,
-        workbook: {
-          headers: ["company", "model", "stage", "employees", "owner", "tag", "priority"],
-          renamedCompany: false,
-          renamedStage: false,
-          totalAdded: false,
-          countAdded: false,
-          priorityFormulaSeeded: false,
-          priorityFilled: false,
-          csvExported: false,
-          xlsxSaved: false,
-          selectedCell: "A1"
-        },
+        workbook: createWorkbookState(),
         selectedView: "research",
         selectedMailId: null,
         extensionOpen: false
@@ -1840,59 +1968,258 @@
         return response.json();
       }
 
-      async function loadState() {
-        state.backend = await api("/state");
-        renderAll();
-      }
-
-      async function waitForDemoReady() {
-        if (state.backend) {
-          return;
-        }
-        await demoReadyPromise;
-      }
-
-      async function resetDemo() {
-        state.backend = await api("/reset", { method: "POST" });
-        state.workbook = {
-          headers: ["company", "model", "stage", "employees", "owner", "tag", "priority"],
-          renamedCompany: false,
-          renamedStage: false,
-          totalAdded: false,
-          countAdded: false,
-          priorityFormulaSeeded: false,
-          priorityFilled: false,
-          csvExported: false,
-          xlsxSaved: false,
-          selectedCell: "A1"
+      function getRecipe() {
+        return state.backend?.tool?.recipe || {
+          column_name: "Priority",
+          formula_text: '=IF(D2>=200,"Tier 1","Tier 2")',
+          formula_kind: "threshold",
+          threshold: 200,
+          source_field: "employees",
+          true_value: "Tier 1",
+          false_value: "Tier 2",
+          match_value: null,
+          output_filename: "fintech_shortlist_prepped.xlsx"
         };
-        state.selectedMailId = null;
-        state.selectedView = "research";
-        state.extensionOpen = false;
-        hideToast();
-        hideOverlay();
-        document.getElementById("extensionPanel").classList.remove("show");
-        document.body.dataset.demoReady = "true";
-        renderAll();
       }
 
-      async function recordAction(action, detail = {}) {
-        await waitForDemoReady();
-        state.backend = await api("/observe", {
-          method: "POST",
-          body: { action, detail }
+      function getWorkbookFlags() {
+        return state.backend?.workbook || {
+          base_headers: ["company", "model", "stage", "employees", "owner", "tag"],
+          column_added: false,
+          formula_seeded: false,
+          fill_down_done: false,
+          generated_by_tool: false,
+          current_input_name: null,
+          current_output_name: null
+        };
+      }
+
+      function getBaseHeaders() {
+        const workbook = getWorkbookFlags();
+        const defaults = workbook.base_headers || ["company", "model", "stage", "employees", "owner", "tag"];
+        return defaults.map((header, index) => state.workbook.headerOverrides[index] || header);
+      }
+
+      function hasFormulaColumn() {
+        const workbook = getWorkbookFlags();
+        return Boolean(workbook.column_added || workbook.formula_seeded || workbook.fill_down_done || workbook.generated_by_tool);
+      }
+
+      function formulaFilledForRow(rowNumber) {
+        const workbook = getWorkbookFlags();
+        return Boolean(workbook.generated_by_tool || workbook.fill_down_done || rowNumber === 2);
+      }
+
+      function evaluateRecipeValue(row) {
+        const recipe = getRecipe();
+        if (recipe.formula_kind === "stage_match") {
+          return row.stage === recipe.match_value ? recipe.true_value : recipe.false_value;
+        }
+        return Number(row.employees) >= Number(recipe.threshold || 0) ? recipe.true_value : recipe.false_value;
+      }
+
+      function buildCsvText(rows) {
+        return [
+          "company,model,stage,employees,owner",
+          ...rows.map((row) => `${row.company},${row.model},${row.stage},${row.employees},${row.owner}`)
+        ].join("\n");
+      }
+
+      function parseCsvText(text) {
+        const lines = text.trim().split(/\r?\n/).filter(Boolean);
+        if (lines.length < 2) {
+          return [];
+        }
+        const headers = lines[0].split(",").map((header) => header.trim().toLowerCase());
+        return lines.slice(1).map((line) => {
+          const cells = line.split(",").map((cell) => cell.trim());
+          const lookup = Object.fromEntries(headers.map((header, index) => [header, cells[index] || ""]));
+          return {
+            company: lookup.company || lookup.name || "Unknown Co",
+            model: lookup.model || lookup.segment || "Unknown model",
+            stage: lookup.stage || lookup.funding_stage || "Series B",
+            employees: Number(lookup.employees || lookup.headcount || 0) || 0,
+            owner: lookup.owner || "Bob"
+          };
         });
-        renderAll();
       }
 
-      async function advanceDay() {
-        await waitForDemoReady();
-        showOverlay("Next day", "The workspace returns with the previous activity already connected and ready to reuse.");
-        await new Promise((resolve) => setTimeout(resolve, 1400));
-        state.backend = await api("/advance-day", { method: "POST" });
-        hideOverlay();
-        renderAll();
-        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      function extractRecipePatchFromFormula(value, fallbackRecipe = getRecipe()) {
+        const trimmed = value.trim();
+        const thresholdMatch = trimmed.match(/^=IF\(D2\s*(>=|>|<=|<)\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)$/i);
+        if (thresholdMatch) {
+          return {
+            ...fallbackRecipe,
+            formula_kind: "threshold",
+            source_field: "employees",
+            source_column_letter: "D",
+            operator: thresholdMatch[1],
+            threshold: Number(thresholdMatch[2]),
+            true_value: thresholdMatch[3],
+            false_value: thresholdMatch[4],
+            formula_text: trimmed
+          };
+        }
+
+        const stageMatch = trimmed.match(/^=IF\(C2\s*=\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)$/i);
+        if (stageMatch) {
+          return {
+            ...fallbackRecipe,
+            formula_kind: "stage_match",
+            source_field: "stage",
+            source_column_letter: "C",
+            operator: "=",
+            match_value: stageMatch[1],
+            true_value: stageMatch[2],
+            false_value: stageMatch[3],
+            formula_text: trimmed
+          };
+        }
+
+        return {
+          ...fallbackRecipe,
+          formula_text: trimmed
+        };
+      }
+
+      function getSummaryRowNumber() {
+        return state.workbook.rows.length + 2;
+      }
+
+      function getCellValue(cellRef) {
+        const column = cellRef.replace(/[0-9]/g, "");
+        const row = Number(cellRef.replace(/[^0-9]/g, ""));
+        const recipe = getRecipe();
+        const headers = getBaseHeaders();
+
+        if (row === 1) {
+          const headerMap = {
+            A: headers[0] || "",
+            B: headers[1] || "",
+            C: headers[2] || "",
+            D: headers[3] || "",
+            E: headers[4] || "",
+            F: headers[5] || "",
+            G: hasFormulaColumn() ? recipe.column_name : ""
+          };
+          return headerMap[column] || "";
+        }
+
+        const record = state.workbook.rows[row - 2];
+        if (!record) {
+          return "";
+        }
+
+        if (column === "A") return record.company;
+        if (column === "B") return record.model;
+        if (column === "C") return record.stage;
+        if (column === "D") return String(record.employees);
+        if (column === "E") return record.owner;
+        if (column === "F") return "[Q2-Outbound-Fintech-BM]";
+        if (column === "G") {
+          if (!hasFormulaColumn()) return "";
+          const workbook = getWorkbookFlags();
+          if (!workbook.formula_seeded && !workbook.generated_by_tool) {
+            return "";
+          }
+          return formulaFilledForRow(row) ? evaluateRecipeValue(record) : "";
+        }
+        return "";
+      }
+
+      function getFormulaBarValue(cellRef) {
+        const column = cellRef.replace(/[0-9]/g, "");
+        const row = Number(cellRef.replace(/[^0-9]/g, ""));
+        if (column === "G" && row >= 2 && hasFormulaColumn()) {
+          const workbook = getWorkbookFlags();
+          if (workbook.formula_seeded || workbook.generated_by_tool) {
+            return getRecipe().formula_text;
+          }
+        }
+        return getCellValue(cellRef);
+      }
+
+      function selectCell(cellRef) {
+        state.workbook.selectedCell = cellRef;
+        document.getElementById("formulaRef").textContent = cellRef;
+        document.getElementById("formulaBarInput").value = getFormulaBarValue(cellRef);
+        document.querySelectorAll(".sheet-grid .selected-cell").forEach((cell) => cell.classList.remove("selected-cell"));
+        const selected = document.querySelector(`[data-cell-ref="${cellRef}"]`);
+        if (selected) {
+          selected.classList.add("selected-cell");
+        }
+      }
+
+      function bindSheetInteractions() {
+        document.querySelectorAll("[data-cell-ref]").forEach((cell) => {
+          cell.addEventListener("click", () => selectCell(cell.dataset.cellRef));
+        });
+        selectCell(state.workbook.selectedCell);
+      }
+
+      function buildSheetRows() {
+        const rows = [];
+        const summaryRow = getSummaryRowNumber();
+        const headerValues = ["A", "B", "C", "D", "E", "F", "G"].map((columnLetter) => getCellValue(`${columnLetter}1`));
+        rows.push(`
+          <tr>
+            <td class="row-number">1</td>
+            ${headerValues.map((header, index) => {
+              const ref = `${"ABCDEFG"[index]}1`;
+              const editable = ref === "A1" || ref === "C1" || ref === "G1";
+              return `<th data-cell-ref="${ref}" class="${editable ? "editable" : ""}">${header}</th>`;
+            }).join("")}
+          </tr>
+        `);
+
+        state.workbook.rows.forEach((record, index) => {
+          const rowNumber = index + 2;
+          const gClass = hasFormulaColumn() ? (formulaFilledForRow(rowNumber) ? "formula-cell" : "editable") : "editable";
+          rows.push(`
+            <tr>
+              <td class="row-number">${rowNumber}</td>
+              <td data-cell-ref="A${rowNumber}">${record.company}</td>
+              <td data-cell-ref="B${rowNumber}">${record.model}</td>
+              <td data-cell-ref="C${rowNumber}">${record.stage}</td>
+              <td data-cell-ref="D${rowNumber}">${record.employees}</td>
+              <td data-cell-ref="E${rowNumber}">${record.owner}</td>
+              <td data-cell-ref="F${rowNumber}">[Q2-Outbound-Fintech-BM]</td>
+              <td data-cell-ref="G${rowNumber}" class="${gClass}">${getCellValue(`G${rowNumber}`)}</td>
+            </tr>
+          `);
+        });
+
+        rows.push(`
+          <tr>
+            <td class="row-number">${summaryRow}</td>
+            <td data-cell-ref="A${summaryRow}"></td>
+            <td data-cell-ref="B${summaryRow}"></td>
+            <td data-cell-ref="C${summaryRow}"></td>
+            <td data-cell-ref="D${summaryRow}"></td>
+            <td data-cell-ref="E${summaryRow}"></td>
+            <td data-cell-ref="F${summaryRow}"></td>
+            <td data-cell-ref="G${summaryRow}" class="${getWorkbookFlags().generated_by_tool ? "formula-cell" : ""}">${getWorkbookFlags().generated_by_tool ? "Tool output ready" : ""}</td>
+          </tr>
+        `);
+
+        document.getElementById("sheetBody").innerHTML = rows.join("");
+        bindSheetInteractions();
+
+        const workbook = getWorkbookFlags();
+        const statusText = workbook.generated_by_tool
+          ? `Tool-applied · ${getRecipe().column_name} column filled down`
+          : state.backend?.scenes?.xlsx_saved
+            ? "Workbook saved"
+            : state.backend?.scenes?.portal_exported
+              ? "CSV loaded · add column and formula"
+              : "Waiting for export";
+        document.getElementById("excelStatus").textContent = statusText;
+        document.getElementById("excelStatusTitle").textContent = workbook.generated_by_tool ? "Ready for review" : state.backend?.scenes?.xlsx_saved ? "Saved to OneDrive" : "Unsaved changes";
+        document.getElementById("excelStatusFooter").textContent = workbook.generated_by_tool ? "Calculated" : state.backend?.scenes?.xlsx_saved ? "Saved" : "Ready";
+      }
+
+      function updateDayTheme() {
+        document.body.dataset.dayPhase = state.backend && state.backend.current_day >= 2 ? "night" : "day";
       }
 
       function showOverlay(title, text) {
@@ -1914,6 +2241,52 @@
         document.getElementById("helperToast").classList.remove("show");
       }
 
+      async function waitForDemoReady() {
+        if (state.backend) {
+          return;
+        }
+        await demoReadyPromise;
+      }
+
+      async function recordAction(action, detail = {}) {
+        await waitForDemoReady();
+        state.backend = await api("/observe", {
+          method: "POST",
+          body: { action, detail }
+        });
+      }
+
+      async function loadState() {
+        state.backend = await api("/state");
+        updateDayTheme();
+        renderAll();
+      }
+
+      async function resetDemo() {
+        state.backend = await api("/reset", { method: "POST" });
+        state.workbook = createWorkbookState();
+        state.selectedMailId = null;
+        state.selectedView = "research";
+        state.extensionOpen = false;
+        document.getElementById("extensionPanel").classList.remove("show");
+        hideToast();
+        hideOverlay();
+        updateDayTheme();
+        renderAll();
+      }
+
+      async function advanceDay() {
+        await waitForDemoReady();
+        showOverlay("Next day", "Night rolls across the workspace, and yesterday's spreadsheet context is waiting in memory.");
+        await new Promise((resolve) => setTimeout(resolve, 1450));
+        state.backend = await api("/advance-day", { method: "POST" });
+        state.selectedView = "research";
+        state.workbook.selectedCell = "A1";
+        hideOverlay();
+        updateDayTheme();
+        renderAll();
+      }
+
       function switchView(view) {
         state.selectedView = view;
         document.querySelector(".page").dataset.viewMode = view;
@@ -1925,7 +2298,7 @@
         });
         const urlMap = {
           research: "portal.example.com/leads",
-          excel: "leads_2026-04-16.xlsx",
+          excel: getWorkbookFlags().generated_by_tool ? getRecipe().output_filename : "leads_2026-04-16.xlsx",
           graph: "workflow.ai/context-graph",
           inbox: "outlook.office.com/mail/inbox"
         };
@@ -1945,28 +2318,29 @@
       }
 
       function renderWorkspaceChrome(view) {
+        const tool = state.backend?.tool;
         const chromeByView = {
           research: {
             heading: "Acme Capital Deal Portal",
-            subheading: "Review this morning's shortlist, export it, and hand it off to workbook prep.",
-            badge: state.backend ? `Sidecar v${state.backend.tool.version} · ${state.backend.tool.status}` : "Morning workflow",
+            subheading: "Bob exports the CSV here first, then the spreadsheet flow branches into memory or the generated tool.",
+            badge: tool ? `Sidecar v${tool.version} · ${tool.status}` : "Morning workflow",
             syncLabel: "Refresh mail"
           },
           excel: {
             heading: "Microsoft Excel",
-            subheading: "Clean the shortlist, add the review math, and save the workbook for circulation.",
-            badge: "Workbook prep",
+            subheading: "Add the new column, seed the formula once, drag it down, and save. On day two the tool does that for you.",
+            badge: getWorkbookFlags().generated_by_tool ? "Tool-generated workbook" : "Manual workbook prep",
             syncLabel: "Open Outlook"
           },
           graph: {
             heading: "WorkFlow.ai Memory",
-            subheading: "Repeated steps, generated helper context, and inbox-driven changes in one map.",
+            subheading: "The graph shows manual context first, then the generated tool, then formula revisions flowing in from Outlook.",
             badge: "Live context",
             syncLabel: "Refresh mail"
           },
           inbox: {
             heading: "Microsoft Outlook",
-            subheading: "Reviewer requests land here before they become changes to the workbook sidecar.",
+            subheading: "Inject a reviewer request here and the tool will propose a new formula before Bob starts tomorrow's run.",
             badge: state.backend?.inbox?.pending_update ? "Update waiting" : "Focused inbox",
             syncLabel: "Refresh mail"
           }
@@ -1993,12 +2367,12 @@
 
       function renderBeatList() {
         const beats = [
-          "Research export",
-          "Workbook cleanup",
-          "Activity graph",
-          "Workflow suggestion",
-          "Outlook request",
-          "Workflow update"
+          "Export CSV from portal",
+          "Add formula column in Excel",
+          "Graph captures the manual rule",
+          "Next day AI offers code",
+          "Tool reopens workbook already edited",
+          "Outlook updates the formula"
         ];
         document.getElementById("beatList").innerHTML = beats
           .map((item, index) => `<div class="sidebar-item"><div class="sidebar-title">${index + 1}. ${item}</div></div>`)
@@ -2006,11 +2380,14 @@
       }
 
       function renderPreferenceList() {
+        const recipe = getRecipe();
         const prefs = [
           `Button size: ${state.backend.tool.button_size}`,
           `Primary label: ${state.backend.tool.primary_label}`,
-          ...state.backend.tool.personalization_notes.slice(0, 2),
-          ...state.backend.tool.analyst_rules.slice(0, 2)
+          `Formula column: ${recipe.column_name}`,
+          `Seed formula: ${recipe.formula_text}`,
+          ...state.backend.tool.personalization_notes.slice(0, 1),
+          ...state.backend.tool.analyst_rules.slice(0, 1)
         ];
         document.getElementById("preferenceList").innerHTML = prefs.length
           ? prefs.map((item) => `<div class="sidebar-item"><div class="sidebar-title">${item}</div></div>`).join("")
@@ -2030,132 +2407,38 @@
 
       function renderResearchPrompt() {
         const prompt = document.getElementById("nextDayPrompt");
-        document.getElementById("nextDayPromptText").textContent = state.backend.graph.ai_caption;
+        const toolGenerated = Boolean(state.backend.scenes.tool_generated);
+        const pending = state.backend.tool.pending_update;
+        const recipe = getRecipe();
+
+        if (pending) {
+          document.getElementById("nextDayPromptText").textContent = `I read the email. The next tool revision changes ${recipe.column_name} to ${pending.recipe_patch?.formula_text || recipe.formula_text}.`;
+        } else if (state.backend.current_day >= 2 && state.backend.workflow.times_seen >= 1 && !toolGenerated) {
+          document.getElementById("nextDayPromptText").textContent = `Yesterday Bob added ${recipe.column_name} with ${recipe.formula_text}. WorkFlow.ai can add code for that now.`;
+        } else {
+          document.getElementById("nextDayPromptText").textContent = state.backend.graph.ai_caption;
+        }
         prompt.classList.toggle("hidden", state.backend.workflow.times_seen < 1);
-        if (state.selectedView === "research" && state.backend.workflow.times_seen >= 1 && !state.extensionOpen) {
-          showToast("A reusable workbook pass is ready for today's shortlist.");
+
+        if (state.selectedView === "research" && !state.extensionOpen) {
+          if (pending) {
+            showToast("I read the Outlook change. Open the tool and I can update the formula before Bob starts.");
+          } else if (state.backend.current_day >= 2 && state.backend.workflow.times_seen >= 1 && !toolGenerated) {
+            showToast(`I saw Bob add ${recipe.column_name} yesterday. Want me to add code for that?`);
+          } else if (toolGenerated) {
+            showToast("Drop today's CSV into the sidecar and it will reopen Excel already edited.");
+          } else {
+            hideToast();
+          }
         } else {
           hideToast();
         }
+
         document.getElementById("observerSummary").textContent =
           state.backend.workflow.times_seen >= 1
             ? `${state.backend.workflow.times_seen} repeat pass${state.backend.workflow.times_seen === 1 ? "" : "es"} recognized`
             : "Watching for a repeatable morning pattern";
         document.getElementById("todayObserverDot").classList.toggle("lit", state.backend.workflow.times_seen >= 1);
-      }
-
-      function getSummaryRowNumber() {
-        return CSV_ROWS.length + 2;
-      }
-
-      function getCellValue(cellRef) {
-        const column = cellRef.replace(/[0-9]/g, "");
-        const row = Number(cellRef.replace(/[^0-9]/g, ""));
-        const summaryRow = getSummaryRowNumber();
-
-        if (row === 1) {
-          const index = "ABCDEFG".indexOf(column);
-          return state.workbook.headers[index] ?? "";
-        }
-
-        if (row >= 2 && row < summaryRow) {
-          const record = CSV_ROWS[row - 2];
-          if (!record) return "";
-          if (column === "A") return record.company;
-          if (column === "B") return record.model;
-          if (column === "C") return record.stage;
-          if (column === "D") return String(record.employees);
-          if (column === "E") return record.owner;
-          if (column === "F") return "[Q2-Outbound-Fintech-BM]";
-          if (column === "G") {
-            if (!state.workbook.priorityFormulaSeeded) return "";
-            if (row === 2 || state.workbook.priorityFilled) {
-              return record.employees >= 200 ? "Tier 1" : "Tier 2";
-            }
-            return "";
-          }
-        }
-
-        if (row === summaryRow) {
-          if (column === "C") {
-            return state.workbook.countAdded ? 'Series B count = 2' : "";
-          }
-          if (column === "D") {
-            return state.workbook.totalAdded ? 'Total headcount = 1,445' : "";
-          }
-        }
-
-        return "";
-      }
-
-      function selectCell(cellRef) {
-        state.workbook.selectedCell = cellRef;
-        document.getElementById("formulaRef").textContent = cellRef;
-        document.getElementById("formulaBarInput").value = getCellValue(cellRef);
-        document.querySelectorAll(".sheet-grid .selected-cell").forEach((cell) => cell.classList.remove("selected-cell"));
-        const selected = document.querySelector(`[data-cell-ref="${cellRef}"]`);
-        if (selected) {
-          selected.classList.add("selected-cell");
-        }
-      }
-
-      function bindSheetInteractions() {
-        document.querySelectorAll("[data-cell-ref]").forEach((cell) => {
-          cell.addEventListener("click", () => selectCell(cell.dataset.cellRef));
-        });
-        selectCell(state.workbook.selectedCell);
-      }
-
-      function buildSheetRows() {
-        const rows = [];
-        const headers = state.workbook.headers;
-        const summaryRow = getSummaryRowNumber();
-        rows.push(`
-          <tr>
-            <td class="row-number">1</td>
-            ${headers.map((header, index) => {
-              const ref = `${"ABCDEFG"[index]}1`;
-              return `<th data-cell-ref="${ref}" class="${index === 0 || index === 2 ? "editable" : ""}">${header}</th>`;
-            }).join("")}
-          </tr>
-        `);
-        CSV_ROWS.forEach((row, index) => {
-          const rowNumber = index + 2;
-          rows.push(`
-            <tr>
-              <td class="row-number">${rowNumber}</td>
-              <td data-cell-ref="A${rowNumber}">${row.company}</td>
-              <td data-cell-ref="B${rowNumber}">${row.model}</td>
-              <td data-cell-ref="C${rowNumber}">${row.stage}</td>
-              <td data-cell-ref="D${rowNumber}">${row.employees}</td>
-              <td data-cell-ref="E${rowNumber}">${row.owner}</td>
-              <td data-cell-ref="F${rowNumber}">[Q2-Outbound-Fintech-BM]</td>
-              <td data-cell-ref="G${rowNumber}" class="${state.workbook.priorityFormulaSeeded ? "formula-cell" : "editable"}">${getCellValue(`G${rowNumber}`)}</td>
-            </tr>
-          `);
-        });
-        rows.push(`
-          <tr>
-            <td class="row-number">${summaryRow}</td>
-            <td data-cell-ref="A${summaryRow}"></td>
-            <td data-cell-ref="B${summaryRow}"></td>
-            <td data-cell-ref="C${summaryRow}" class="${state.workbook.countAdded ? "formula-cell" : "editable"}">${state.workbook.countAdded ? 'Series B count = 2' : ''}</td>
-            <td data-cell-ref="D${summaryRow}" class="${state.workbook.totalAdded ? "formula-cell" : "editable"}">${state.workbook.totalAdded ? 'Total headcount = 1,445' : ''}</td>
-            <td data-cell-ref="E${summaryRow}"></td>
-            <td data-cell-ref="F${summaryRow}"></td>
-            <td data-cell-ref="G${summaryRow}"></td>
-          </tr>
-        `);
-        document.getElementById("sheetBody").innerHTML = rows.join("");
-        bindSheetInteractions();
-        const statusText = state.workbook.xlsxSaved
-          ? "Saved to workbook"
-          : state.workbook.csvExported
-            ? "CSV imported · review edits pending"
-            : "Waiting for export";
-        document.getElementById("excelStatus").textContent = statusText;
-        document.getElementById("excelStatusTitle").textContent = state.workbook.xlsxSaved ? "Saved to OneDrive" : "Unsaved changes";
-        document.getElementById("excelStatusFooter").textContent = state.workbook.xlsxSaved ? "Saved" : "Ready";
       }
 
       function renderGraph() {
@@ -2322,7 +2605,7 @@
           ? `${messages.length} message${messages.length === 1 ? "" : "s"} in this mailbox`
           : "No reviewer mail yet.";
         document.getElementById("inboxStatus").textContent = state.backend.inbox.pending_update
-          ? "Actionable request ready"
+          ? "Formula update ready"
           : state.backend.inbox.last_sync_at
             ? `Last sync: ${state.backend.inbox.last_sync_at}`
             : "Inbox idle";
@@ -2336,7 +2619,7 @@
                 <div class="mail-time">${message.received_at || ""}</div>
               </div>
             `).join("")
-          : `<div class="mail-item"><div class="mail-snippet">No new reviewer messages. Refresh inbox to simulate the next request.</div></div>`;
+          : `<div class="mail-item"><div class="mail-snippet">No new reviewer messages. Refresh inbox to simulate the next formula request.</div></div>`;
 
         const active = messages.find((message) => message.id === state.selectedMailId) || messages[0];
         if (active) {
@@ -2353,22 +2636,59 @@
 
       function renderTool() {
         const tool = state.backend.tool;
+        const recipe = getRecipe();
+        const toolGenerated = Boolean(state.backend.scenes.tool_generated);
+        const pending = tool.pending_update;
+
         document.getElementById("toolTitle").textContent = tool.name;
         document.getElementById("toolSubtitle").textContent = state.backend.graph.tool_summary;
         document.getElementById("toolVersionLabel").textContent = `v${tool.version}`;
         document.getElementById("toolVersionBadge").textContent = `Sidecar v${tool.version} · ${tool.status}`;
         document.getElementById("toolStatusBadge").textContent = `${tool.status.charAt(0).toUpperCase() + tool.status.slice(1)} · v${tool.version}`;
         document.getElementById("toolPreviewSummary").textContent = state.backend.graph.ai_caption;
-
-        const primaryButton = document.getElementById("toolPrimaryButton");
-        primaryButton.className = `size-${tool.button_size}`;
-        primaryButton.textContent = tool.primary_label;
+        document.getElementById("toolPreviewLead").textContent = toolGenerated
+          ? "Drop a CSV and the sidecar will reopen the workbook already edited."
+          : "The sidecar is still a suggestion until Bob asks it to add code.";
 
         document.getElementById("assistantPopupText").textContent = state.backend.graph.ai_caption;
         document.getElementById("assistantBulletList").innerHTML = tool.change_log.slice(0, 3).map((entry) => `<li>${entry.suggested_change}</li>`).join("")
-          || `<li>Export the shortlist from the deal portal</li><li>Rename the workbook headers and add the review formulas</li><li>Save the cleaned workbook for the coverage team</li>`;
+          || `<li>Export the shortlist from the deal portal</li><li>Add the new formula column in Excel</li><li>Save the workbook so the pattern can be replayed later</li>`;
 
-        const pending = tool.pending_update;
+        document.getElementById("toolRecipePills").innerHTML = [
+          `Column: ${recipe.column_name}`,
+          `Formula: ${recipe.formula_text}`,
+          `Output: ${recipe.output_filename}`
+        ].map((item) => `<span class="tool-pill">${item}</span>`).join("");
+
+        const dropzone = document.getElementById("toolDropzone");
+        dropzone.classList.toggle("ready", toolGenerated && !pending);
+        dropzone.textContent = pending
+          ? "The tool has a pending formula update from Outlook. Apply it first or inspect the email."
+          : toolGenerated
+            ? "Drop a CSV here or click \"Use today's CSV\". The Excel tab will reopen with the formula already filled down."
+            : "Come back on the next day, click \"Add code\", and this drop zone becomes the tool input.";
+
+        const primaryButton = document.getElementById("toolPrimaryButton");
+        primaryButton.className = `size-${tool.button_size}`;
+        if (pending) {
+          primaryButton.textContent = "Update tool";
+          primaryButton.onclick = () => void applyAnalystUpdate();
+        } else if (state.backend.current_day >= 2 && state.backend.workflow.times_seen >= 1 && !toolGenerated) {
+          primaryButton.textContent = "Add code";
+          primaryButton.onclick = () => void generateTool();
+        } else if (toolGenerated) {
+          primaryButton.textContent = "Use today's CSV";
+          primaryButton.onclick = () => void runToolFromCsvText(buildCsvText(state.workbook.rows), state.workbook.latestCsvName);
+        } else {
+          primaryButton.textContent = "Open Excel";
+          primaryButton.onclick = () => switchView("excel");
+        }
+
+        const previewButton = document.getElementById("useToolButton");
+        previewButton.onclick = toolGenerated
+          ? () => void runToolFromCsvText(buildCsvText(state.workbook.rows), state.workbook.latestCsvName)
+          : () => switchView("excel");
+
         const banner = document.getElementById("analystUpdateBanner");
         banner.classList.toggle("hidden", !pending);
         document.getElementById("analystUpdateText").textContent = pending
@@ -2393,31 +2713,44 @@
         const primary = document.getElementById("extensionPrimaryAction");
         const secondary = document.getElementById("extensionSecondaryAction");
         const pending = state.backend.tool.pending_update;
+        const toolGenerated = Boolean(state.backend.scenes.tool_generated);
+        const recipe = getRecipe();
 
         if (pending) {
-          title.textContent = "An inbox request is ready to merge";
+          title.textContent = "I read the email. Want me to update the tool?";
           text.textContent = `${pending.summary} ${pending.suggested_change}`;
-          meta.textContent = "Outlook request available";
-          primary.textContent = "Apply update";
-          primary.onclick = applyAnalystUpdate;
+          meta.textContent = "Formula update available";
+          primary.textContent = "Update tool";
+          primary.onclick = () => void applyAnalystUpdate();
           secondary.textContent = "Open Outlook";
           secondary.onclick = () => switchView("inbox");
           return;
         }
 
-        if (state.backend.workflow.times_seen >= 1) {
-          title.textContent = "This pass is ready to run";
-          text.textContent = state.backend.graph.ai_caption;
-          meta.textContent = "Observed pattern ready";
-          primary.textContent = state.backend.tool.primary_label;
-          primary.onclick = useTool;
+        if (state.backend.current_day >= 2 && state.backend.workflow.times_seen >= 1 && !toolGenerated) {
+          title.textContent = "I saw Bob add this formula yesterday";
+          text.textContent = `He created ${recipe.column_name} with ${recipe.formula_text}. Want me to add code so the CSV opens already cleaned next time?`;
+          meta.textContent = "Proactive tool generation";
+          primary.textContent = "Add code";
+          primary.onclick = () => void generateTool();
           secondary.textContent = "Later";
           secondary.onclick = closeExtensionPanel;
           return;
         }
 
+        if (toolGenerated) {
+          title.textContent = "Drop a CSV and I'll reopen Excel already edited";
+          text.textContent = `The tool writes ${recipe.column_name}, seeds ${recipe.formula_text}, and fills it down before the workbook opens.`;
+          meta.textContent = "CSV-to-Excel tool ready";
+          primary.textContent = "Use today's CSV";
+          primary.onclick = () => void runToolFromCsvText(buildCsvText(state.workbook.rows), state.workbook.latestCsvName);
+          secondary.textContent = "Open graph";
+          secondary.onclick = () => switchView("graph");
+          return;
+        }
+
         title.textContent = "Still learning this pass";
-        text.textContent = "Complete the export, workbook cleanup, and save steps once so the sidecar can mirror them.";
+        text.textContent = "Complete the export, add the new formula column in Excel, and save once so the sidecar can replay it tomorrow.";
         meta.textContent = "Activity still accumulating";
         primary.textContent = "Open Excel";
         primary.onclick = () => switchView("excel");
@@ -2445,6 +2778,7 @@
         renderExtensionPanel();
         renderGuide();
         renderWorkspaceChrome(state.selectedView);
+        updateDayTheme();
         document.getElementById("dayLabel").textContent = state.backend.day_label;
         document.getElementById("stateWorkflowCount").textContent = `${state.backend.workflow.times_seen} observed runs`;
         document.getElementById("stateCurrentDay").textContent = state.backend.day_label;
@@ -2455,31 +2789,26 @@
 
       async function copyCsv() {
         await waitForDemoReady();
-        const csv = [
-          "company,model,stage,employees,owner",
-          ...CSV_ROWS.map((row) => `${row.company},${row.model},${row.stage},${row.employees},${row.owner}`)
-        ].join("\\n");
+        const csv = buildCsvText(state.workbook.rows);
         await navigator.clipboard.writeText(csv).catch(() => {});
         emitDemoAction("copy", csv, { tag: "button", role: "button", text: "Copy Sample CSV", aria_label: null }, { step: "copy-csv" });
       }
 
       async function exportCsv() {
         await waitForDemoReady();
-        const csv = [
-          "company,model,stage,employees,owner",
-          ...CSV_ROWS.map((row) => `${row.company},${row.model},${row.stage},${row.employees},${row.owner}`)
-        ].join("\\n");
+        const csv = buildCsvText(state.workbook.rows);
         const blob = new Blob([csv], { type: "text/csv" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = "fintech_shortlist_2026-04-16.csv";
         link.click();
         URL.revokeObjectURL(link.href);
-        state.workbook.csvExported = true;
-        await recordAction("portal_exported", { filename: "fintech_shortlist_2026-04-16.csv" });
+        state.workbook.latestCsvName = "fintech_shortlist_2026-04-16.csv";
+        await recordAction("portal_exported", { filename: state.workbook.latestCsvName });
         await recordAction("excel_opened", { source: "export" });
         emitDemoAction("file_download", csv, { tag: "button", role: "button", text: "Export CSV", aria_label: null }, { step: "export-csv" });
         switchView("excel");
+        renderAll();
       }
 
       async function renameCompany() {
@@ -2496,35 +2825,42 @@
         await applyFormulaBar();
       }
 
-      async function addTotalFormula() {
+      async function addFormulaColumn() {
         await waitForDemoReady();
-        selectCell(`D${getSummaryRowNumber()}`);
-        document.getElementById("formulaBarInput").value = "=SUM(D2:D7)";
-        await applyFormulaBar();
+        if (!hasFormulaColumn()) {
+          await recordAction("excel_column_added", {
+            column_name: getRecipe().column_name,
+            recipe_patch: { ...getRecipe(), column_name: getRecipe().column_name }
+          });
+        }
+        state.workbook.selectedCell = "G1";
+        renderAll();
       }
 
-      async function addCountFormula() {
+      async function nameFormulaColumn() {
         await waitForDemoReady();
-        selectCell(`C${getSummaryRowNumber()}`);
-        document.getElementById("formulaBarInput").value = '=COUNTIF(C2:C7,"Series B")';
-        await applyFormulaBar();
+        await addFormulaColumn();
+        document.getElementById("formulaBarInput").value = getRecipe().column_name;
       }
 
       async function seedPriorityFormula() {
         await waitForDemoReady();
+        if (!hasFormulaColumn()) {
+          await addFormulaColumn();
+        }
         selectCell("G2");
-        document.getElementById("formulaBarInput").value = '=IF(D2>=200,"Tier 1","Tier 2")';
+        document.getElementById("formulaBarInput").value = getRecipe().formula_text;
         await applyFormulaBar();
       }
 
       async function fillPriorityDown() {
         await waitForDemoReady();
-        if (!state.workbook.priorityFormulaSeeded) {
+        const workbook = getWorkbookFlags();
+        if (!workbook.formula_seeded && !workbook.generated_by_tool) {
           return;
         }
-        state.workbook.priorityFilled = true;
-        await recordAction("excel_formulas_done", { formula: "fill_down:G2:G7" });
-        emitDemoAction("submit", "fill_down:G2:G7", { tag: "button", role: null, text: "Fill down", aria_label: null }, { step: "fill-down" });
+        await recordAction("excel_fill_down", { fill_range: getRecipe().fill_range, recipe_patch: getRecipe() });
+        emitDemoAction("submit", getRecipe().fill_range, { tag: "button", role: null, text: "Drag fill", aria_label: null }, { step: "fill-down" });
         renderAll();
       }
 
@@ -2538,30 +2874,34 @@
 
         const column = cellRef.replace(/[0-9]/g, "");
         const row = Number(cellRef.replace(/[^0-9]/g, ""));
-        const summaryRow = getSummaryRowNumber();
 
         if (row === 1 && column === "A") {
-          state.workbook.headers[0] = value;
-          state.workbook.renamedCompany = true;
+          state.workbook.headerOverrides[0] = value;
           await recordAction("excel_headers_done", { changed: `company -> ${value}` });
           emitDemoAction("input", value, { tag: "th", role: null, text: value, aria_label: null }, { step: "rename-company" });
         } else if (row === 1 && column === "C") {
-          state.workbook.headers[2] = value;
-          state.workbook.renamedStage = true;
+          state.workbook.headerOverrides[2] = value;
           await recordAction("excel_headers_done", { changed: `stage -> ${value}` });
           emitDemoAction("input", value, { tag: "th", role: null, text: value, aria_label: null }, { step: "rename-stage" });
-        } else if (row === summaryRow && column === "D" && value.toUpperCase().includes("SUM")) {
-          state.workbook.totalAdded = true;
-          await recordAction("excel_formulas_done", { formula: value });
-          emitDemoAction("submit", value, { tag: "button", role: null, text: "Formula bar", aria_label: null }, { step: "add-sum" });
-        } else if (row === summaryRow && column === "C" && value.toUpperCase().includes("COUNTIF")) {
-          state.workbook.countAdded = true;
-          await recordAction("excel_formulas_done", { formula: value });
-          emitDemoAction("submit", value, { tag: "button", role: null, text: "Formula bar", aria_label: null }, { step: "add-count" });
+        } else if (row === 1 && column === "G") {
+          await recordAction("excel_column_added", {
+            column_name: value,
+            recipe_patch: { ...getRecipe(), column_name: value }
+          });
+          emitDemoAction("input", value, { tag: "th", role: null, text: value, aria_label: null }, { step: "name-column" });
         } else if (row === 2 && column === "G" && value.startsWith("=")) {
-          state.workbook.priorityFormulaSeeded = true;
-          await recordAction("excel_formulas_done", { formula: value });
-          emitDemoAction("submit", value, { tag: "button", role: null, text: "Formula bar", aria_label: null }, { step: "seed-priority" });
+          const recipePatch = extractRecipePatchFromFormula(value, getRecipe());
+          if (!hasFormulaColumn()) {
+            await recordAction("excel_column_added", {
+              column_name: recipePatch.column_name,
+              recipe_patch: recipePatch
+            });
+          }
+          await recordAction("excel_formula_seeded", {
+            formula: value,
+            recipe_patch: recipePatch
+          });
+          emitDemoAction("submit", value, { tag: "button", role: null, text: "Formula bar", aria_label: null }, { step: "seed-formula" });
         }
 
         renderAll();
@@ -2569,14 +2909,16 @@
 
       async function saveWorkbook() {
         await waitForDemoReady();
-        if (!state.workbook.csvExported) return;
-        state.workbook.xlsxSaved = true;
-        await recordAction("xlsx_saved", { filename: "fintech_shortlist_2026-04-16.xlsx" });
-        emitDemoAction("file_download", "fintech_shortlist_2026-04-16.xlsx", { tag: "button", role: null, text: "Save as XLSX", aria_label: null }, { step: "save-xlsx" });
+        if (!state.backend.scenes.portal_exported && !getWorkbookFlags().generated_by_tool) {
+          return;
+        }
+        const filename = getWorkbookFlags().generated_by_tool ? getRecipe().output_filename : "fintech_shortlist_2026-04-16.xlsx";
+        await recordAction("xlsx_saved", { filename, recipe_patch: getRecipe() });
+        emitDemoAction("file_download", filename, { tag: "button", role: null, text: "Save workbook", aria_label: null }, { step: "save-xlsx" });
         const blob = new Blob(["placeholder xlsx demo export"], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "fintech_shortlist_2026-04-16.xlsx";
+        link.download = filename;
         link.click();
         URL.revokeObjectURL(link.href);
         renderAll();
@@ -2590,13 +2932,34 @@
           method: "POST",
           body: { request }
         });
-        hideToast();
         renderAll();
       }
 
-      async function useTool() {
+      async function generateTool() {
         await waitForDemoReady();
-        await recordAction("tool_used", { version: state.backend.tool.version });
+        state.backend = await api("/tool/generate", { method: "POST" });
+        renderAll();
+      }
+
+      async function runToolFromCsvText(csvText, inputName) {
+        await waitForDemoReady();
+        if (!state.backend.scenes.tool_generated) {
+          openExtensionPanel();
+          return;
+        }
+        const parsed = parseCsvText(csvText);
+        if (parsed.length) {
+          state.workbook.rows = parsed;
+        }
+        state.workbook.latestCsvName = inputName || state.workbook.latestCsvName;
+        state.workbook.selectedCell = "A1";
+        await recordAction("tool_used", {
+          version: state.backend.tool.version,
+          input_name: state.workbook.latestCsvName,
+          output_name: getRecipe().output_filename,
+          recipe_patch: getRecipe()
+        });
+        switchView("excel");
         renderAll();
       }
 
@@ -2641,10 +3004,6 @@
         void syncGmail();
       }
 
-      function openToolManager() {
-        openExtensionPanel();
-      }
-
       function toggleExtensionPanel() {
         state.extensionOpen = !state.extensionOpen;
         document.getElementById("extensionPanel").classList.toggle("show", state.extensionOpen);
@@ -2654,20 +3013,42 @@
         }
       }
 
+      function setupDropzone() {
+        const dropzone = document.getElementById("toolDropzone");
+        ["dragenter", "dragover"].forEach((eventName) => {
+          dropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            dropzone.classList.add("dragover");
+          });
+        });
+        ["dragleave", "drop"].forEach((eventName) => {
+          dropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            dropzone.classList.remove("dragover");
+          });
+        });
+        dropzone.addEventListener("drop", async (event) => {
+          const file = event.dataTransfer?.files?.[0];
+          if (!file) return;
+          const text = await file.text();
+          await runToolFromCsvText(text, file.name);
+        });
+      }
+
       document.querySelectorAll(".browser-tab").forEach((tab) => {
         tab.addEventListener("click", () => switchView(tab.dataset.view));
       });
 
       document.getElementById("copyCsvButton").addEventListener("click", copyCsv);
-      document.getElementById("exportCsvButton").addEventListener("click", exportCsv);
-      document.getElementById("renameCompanyButton").addEventListener("click", renameCompany);
-      document.getElementById("renameStageButton").addEventListener("click", renameStage);
-      document.getElementById("addSumButton").addEventListener("click", addTotalFormula);
-      document.getElementById("addCountButton").addEventListener("click", addCountFormula);
-      document.getElementById("seedPriorityFormulaButton").addEventListener("click", seedPriorityFormula);
-      document.getElementById("fillDownButton").addEventListener("click", fillPriorityDown);
-      document.getElementById("saveXlsxButton").addEventListener("click", saveWorkbook);
-      document.getElementById("applyFormulaButton").addEventListener("click", applyFormulaBar);
+      document.getElementById("exportCsvButton").addEventListener("click", () => void exportCsv());
+      document.getElementById("renameCompanyButton").addEventListener("click", () => void renameCompany());
+      document.getElementById("renameStageButton").addEventListener("click", () => void renameStage());
+      document.getElementById("addSumButton").addEventListener("click", () => void addFormulaColumn());
+      document.getElementById("addCountButton").addEventListener("click", () => void nameFormulaColumn());
+      document.getElementById("seedPriorityFormulaButton").addEventListener("click", () => void seedPriorityFormula());
+      document.getElementById("fillDownButton").addEventListener("click", () => void fillPriorityDown());
+      document.getElementById("saveXlsxButton").addEventListener("click", () => void saveWorkbook());
+      document.getElementById("applyFormulaButton").addEventListener("click", () => void applyFormulaBar());
       document.getElementById("clearFormulaButton").addEventListener("click", () => {
         document.getElementById("formulaBarInput").value = "";
       });
@@ -2677,34 +3058,22 @@
           void applyFormulaBar();
         }
       });
-      document.getElementById("applyPreferenceButton").addEventListener("click", personalizeTool);
-      document.getElementById("useToolButton").addEventListener("click", useTool);
-      document.getElementById("injectMailButton").addEventListener("click", injectSampleEmail);
-      document.getElementById("syncMailButton").addEventListener("click", syncGmail);
+      document.getElementById("applyPreferenceButton").addEventListener("click", () => void personalizeTool());
+      document.getElementById("injectMailButton").addEventListener("click", () => void injectSampleEmail());
+      document.getElementById("syncMailButton").addEventListener("click", () => void syncGmail());
       document.getElementById("gmailSyncButton").addEventListener("click", handleHeaderAction);
-      document.getElementById("applyAnalystUpdateButton").addEventListener("click", applyAnalystUpdate);
+      document.getElementById("applyAnalystUpdateButton").addEventListener("click", () => void applyAnalystUpdate());
       document.getElementById("showInboxButton").addEventListener("click", () => switchView("inbox"));
-      document.getElementById("openToolManagerButton").addEventListener("click", openToolManager);
+      document.getElementById("openToolManagerButton").addEventListener("click", openExtensionPanel);
       document.getElementById("dismissNextDayButton").addEventListener("click", () => document.getElementById("nextDayPrompt").classList.add("hidden"));
       document.getElementById("extensionButton").addEventListener("click", toggleExtensionPanel);
-      document.getElementById("closeExtensionPanel").addEventListener("click", () => {
-        closeExtensionPanel();
-      });
+      document.getElementById("closeExtensionPanel").addEventListener("click", closeExtensionPanel);
       document.getElementById("toastOpenTool").addEventListener("click", () => { hideToast(); openExtensionPanel(); });
       document.getElementById("toastDismiss").addEventListener("click", hideToast);
-      document.getElementById("resetButton").addEventListener("click", resetDemo);
-      document.getElementById("advanceDayButton").addEventListener("click", advanceDay);
+      document.getElementById("resetButton").addEventListener("click", () => void resetDemo());
+      document.getElementById("advanceDayButton").addEventListener("click", () => void advanceDay());
       document.getElementById("jumpGraphButton").addEventListener("click", () => switchView("graph"));
       document.getElementById("jumpInboxButton").addEventListener("click", () => switchView("inbox"));
-      document.addEventListener("keydown", (event) => {
-        if (event.shiftKey && event.key.toLowerCase() === "r") {
-          void resetDemo();
-        }
-        if (event.shiftKey && event.key.toLowerCase() === "n") {
-          void advanceDay();
-        }
-      });
-
       document.getElementById("mailItems").addEventListener("click", (event) => {
         const target = event.target.closest("[data-mail-id]");
         if (!target) return;
@@ -2712,10 +3081,13 @@
         renderInbox();
       });
 
-      demoReadyPromise = resetDemo().catch((error) => {
-        console.error(error);
-        document.getElementById("guideText").textContent = "Backend demo state is unavailable. Start the backend on port 8000 and reload.";
-      });
+      setupDropzone();
+
+      demoReadyPromise = loadState()
+        .catch((error) => {
+          console.error(error);
+          showOverlay("Backend offline", "Run the FastAPI demo backend on port 8000 to load the interactive storyline.");
+        });
     </script>
   </body>
 </html>

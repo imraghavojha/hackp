@@ -57,6 +57,12 @@ def personalize_tool(payload: DemoToolRequest, request: Request) -> dict[str, An
     return store.personalize_tool(payload.request)
 
 
+@router.post("/tool/generate")
+def generate_tool(request: Request) -> dict[str, Any]:
+    store = request.app.state.showcase_demo_store
+    return store.generate_tool()
+
+
 @router.post("/tool/apply-pending")
 def apply_pending_tool_update(request: Request) -> dict[str, Any]:
     store = request.app.state.showcase_demo_store
