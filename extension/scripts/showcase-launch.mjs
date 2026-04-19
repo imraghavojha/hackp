@@ -1,7 +1,6 @@
-import os from "node:os"
 import path from "node:path"
-import { mkdtemp } from "node:fs/promises"
-import { existsSync } from "node:fs"
+import os from "node:os"
+import { existsSync, mkdirSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { spawn } from "node:child_process"
 
@@ -71,14 +70,21 @@ async function main() {
 
   await fetch("http://127.0.0.1:8000/demo/showcase/reset", { method: "POST" })
 
-  const userDataDir = await mkdtemp(path.join(os.tmpdir(), "hackp-showcase-browser-"))
+  const userDataDir = path.join(os.homedir(), ".hackp-showcase-browser")
+  const downloadsDir = path.join(os.homedir(), "Downloads")
+  mkdirSync(userDataDir, { recursive: true })
+  mkdirSync(downloadsDir, { recursive: true })
   const headless = process.argv.includes("--headless")
 
   const context = await chromium.launchPersistentContext(userDataDir, {
     channel: "chromium",
     headless,
     viewport: { width: 1520, height: 980 },
+    acceptDownloads: true,
+    downloadsPath: downloadsDir,
     args: [
+      "--no-first-run",
+      "--no-default-browser-check",
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`
     ]
@@ -89,6 +95,7 @@ async function main() {
 
   console.log("Showcase browser launched.")
   console.log("Profile:", userDataDir)
+  console.log("Downloads:", downloadsDir)
   console.log("URL:", page.url())
   console.log("This Chromium profile only has the demo extension loaded.")
 
