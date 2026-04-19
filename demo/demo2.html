@@ -286,6 +286,18 @@
         cursor: pointer;
       }
 
+      .primary-btn[disabled],
+      .secondary-btn[disabled],
+      .top-button[disabled],
+      .filter-option[disabled] {
+        opacity: 0.7;
+        cursor: wait;
+      }
+
+      .is-busy::after {
+        content: " ...";
+      }
+
       .primary-btn {
         border: 0;
         background: var(--accent);
@@ -734,6 +746,23 @@
         background: rgba(255, 255, 255, 0.92);
       }
 
+      .formula-examples {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 18px 16px;
+      }
+
+      .formula-chip {
+        border: 1px solid rgba(16, 124, 65, 0.14);
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font: 12px/1.2 "IBM Plex Mono", monospace;
+        cursor: pointer;
+        color: #1d2e26;
+      }
+
       .formula-ref {
         border: 1px solid rgba(16, 124, 65, 0.12);
         border-radius: 10px;
@@ -821,8 +850,8 @@
         position: absolute;
         right: -4px;
         bottom: -4px;
-        width: 12px;
-        height: 12px;
+        width: 16px;
+        height: 16px;
         border-radius: 3px;
         background: #217346;
         border: 2px solid white;
@@ -1774,6 +1803,11 @@
                         <button class="secondary-btn" id="applyFormulaButton">Enter</button>
                         <button class="secondary-btn" id="clearFormulaButton">Clear</button>
                       </div>
+                      <div class="formula-examples">
+                        <button class="formula-chip" id="sampleThresholdFormulaButton">Use =IF(D2&gt;=200,"Tier 1","Tier 2")</button>
+                        <button class="formula-chip" id="sampleStageFormulaButton">Use =IF(C2="Series C","Fast Track","Review")</button>
+                        <button class="formula-chip" id="copyFormulaButton">Copy selected formula</button>
+                      </div>
 
                       <div class="sheet-grid">
                         <table>
@@ -2041,6 +2075,8 @@
         { company: "ScribeStack", domain: "scribestack.com", segment: "Vertical SaaS", model: "Vertical workflow", stage: "Series B", employees: 155, owner: "Ivy", window: "Last 30 days" },
         { company: "HarborOps", domain: "harborops.io", segment: "Vertical SaaS", model: "Ops platform", stage: "Seed", employees: 58, owner: "Ivy", window: "Last 30 days" }
       ];
+      const SAMPLE_THRESHOLD_FORMULA = '=IF(D2>=200,"Tier 1","Tier 2")';
+      const SAMPLE_STAGE_FORMULA = '=IF(C2="Series C","Fast Track","Review")';
 
       function cloneRows(rows) {
         return rows.map((row) => ({ ...row }));
@@ -2184,6 +2220,12 @@
         });
       }
 
+      function loadSampleFormula(formula) {
+        selectCell("G2");
+        document.getElementById("formulaBarInput").value = formula;
+        document.getElementById("formulaBarInput").focus();
+      }
+
       function showBusy(title, text) {
         state.busy = { active: true, title, text };
         document.getElementById("busyTitle").textContent = title;
@@ -2198,10 +2240,31 @@
 
       async function withBusy(title, text, fn) {
         showBusy(title, text);
+        const startedAt = Date.now();
         try {
           return await fn();
         } finally {
+          const remaining = 320 - (Date.now() - startedAt);
+          if (remaining > 0) {
+            await new Promise((resolve) => setTimeout(resolve, remaining));
+          }
           hideBusy();
+        }
+      }
+
+      async function withButtonBusy(buttonId, title, text, fn) {
+        const button = typeof buttonId === "string" ? document.getElementById(buttonId) : buttonId;
+        if (button) {
+          button.disabled = true;
+          button.classList.add("is-busy");
+        }
+        try {
+          return await withBusy(title, text, fn);
+        } finally {
+          if (button) {
+            button.disabled = false;
+            button.classList.remove("is-busy");
+          }
         }
       }
 
@@ -2822,11 +2885,17 @@
       }
 
       function updateGraphLayout() {
+        const canvas = document.getElementById("graphCanvas");
         const edgeSvg = document.getElementById("graphEdges");
         const nodeHost = document.getElementById("graphNodes");
-        if (!edgeSvg || !nodeHost) {
+        if (!canvas || !edgeSvg || !nodeHost) {
           return;
         }
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(rect.width, 1);
+        const height = Math.max(rect.height, 1);
+
+        edgeSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 
         for (const node of graphRuntime.nodes) {
           const element = nodeHost.querySelector(`[data-node-id="${node.id}"]`);
@@ -2856,12 +2925,15 @@
           cancelAnimationFrame(graphRuntime.animationId);
         }
 
-        const width = 1100;
-        const height = 460;
         const animate = () => {
+          const canvas = document.getElementById("graphCanvas");
+          const rect = canvas?.getBoundingClientRect();
+          const width = Math.max(rect?.width ?? 1100, 1);
+          const height = Math.max(rect?.height ?? 460, 1);
+
           for (const node of graphRuntime.nodes) {
-            node.vx += (node.anchorX - node.x) * 0.0024;
-            node.vy += (node.anchorY - node.y) * 0.0024;
+            node.vx += (node.anchorX - node.x) * 0.006;
+            node.vy += (node.anchorY - node.y) * 0.006;
           }
 
           for (let i = 0; i < graphRuntime.nodes.length; i += 1) {
@@ -2871,7 +2943,7 @@
               const dx = b.x - a.x;
               const dy = b.y - a.y;
               const distance = Math.max(Math.hypot(dx, dy), 1);
-              const repulsion = 8000 / (distance * distance);
+              const repulsion = 3200 / (distance * distance);
               const forceX = (dx / distance) * repulsion;
               const forceY = (dy / distance) * repulsion;
               a.vx -= forceX;
@@ -2888,7 +2960,7 @@
             const dx = to.x - from.x;
             const dy = to.y - from.y;
             const distance = Math.max(Math.hypot(dx, dy), 1);
-            const spring = (distance - 220) * 0.0026;
+            const spring = (distance - 220) * 0.0018;
             const forceX = (dx / distance) * spring;
             const forceY = (dy / distance) * spring;
             from.vx += forceX;
@@ -2902,10 +2974,13 @@
               node.vx = 0;
               node.vy = 0;
             } else {
-              node.vx *= 0.9;
-              node.vy *= 0.9;
+              node.vx *= 0.84;
+              node.vy *= 0.84;
               node.x = Math.min(width - node.diameter / 2, Math.max(node.diameter / 2, node.x + node.vx));
               node.y = Math.min(height - node.diameter / 2, Math.max(node.diameter / 2, node.y + node.vy));
+              const maxDrift = node.kind === "workflow" || node.kind === "memory" ? 18 : 28;
+              node.x = Math.min(node.anchorX + maxDrift, Math.max(node.anchorX - maxDrift, node.x));
+              node.y = Math.min(node.anchorY + maxDrift, Math.max(node.anchorY - maxDrift, node.y));
             }
           }
 
@@ -3250,9 +3325,11 @@
         if (!workbook.formula_seeded && !workbook.generated_by_tool) {
           return;
         }
-        await recordAction("excel_fill_down", { fill_range: getRecipe().fill_range, recipe_patch: getRecipe() });
-        emitDemoAction("submit", getRecipe().fill_range, { tag: "button", role: null, text: "Drag fill", aria_label: null }, { step: "fill-down" });
-        renderAll();
+        await withButtonBusy("fillDownButton", "Filling formula", "Copying the seeded formula down the visible rows...", async () => {
+          await recordAction("excel_fill_down", { fill_range: getRecipe().fill_range, recipe_patch: getRecipe() });
+          emitDemoAction("submit", getRecipe().fill_range, { tag: "button", role: null, text: "Drag fill", aria_label: null }, { step: "fill-down" });
+          renderAll();
+        });
       }
 
       async function applyFormulaBar() {
@@ -3262,8 +3339,10 @@
         if (!cellRef || !value) {
           return;
         }
-        await applyCellEdit(cellRef, value);
-        emitDemoAction(value.startsWith("=") ? "submit" : "input", value, { tag: "td", role: null, text: value, aria_label: null }, { step: "formula-bar-apply" });
+        await withButtonBusy("applyFormulaButton", "Applying formula", "Writing the current formula into the selected cell...", async () => {
+          await applyCellEdit(cellRef, value);
+          emitDemoAction(value.startsWith("=") ? "submit" : "input", value, { tag: "td", role: null, text: value, aria_label: null }, { step: "formula-bar-apply" });
+        });
       }
 
       async function saveWorkbook() {
@@ -3272,22 +3351,24 @@
           return;
         }
         const filename = getWorkbookFlags().generated_by_tool ? getRecipe().output_filename : "fintech_shortlist_2026-04-16.xlsx";
-        await recordAction("xlsx_saved", { filename, recipe_patch: getRecipe() });
-        emitDemoAction("file_download", filename, { tag: "button", role: null, text: "Save workbook", aria_label: null }, { step: "save-xlsx" });
-        const blob = new Blob(["placeholder xlsx demo export"], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        link.click();
-        URL.revokeObjectURL(link.href);
-        renderAll();
+        await withButtonBusy("saveXlsxButton", "Saving workbook", "Packaging the cleaned workbook for the next step...", async () => {
+          await recordAction("xlsx_saved", { filename, recipe_patch: getRecipe() });
+          emitDemoAction("file_download", filename, { tag: "button", role: null, text: "Save workbook", aria_label: null }, { step: "save-xlsx" });
+          const blob = new Blob(["placeholder xlsx demo export"], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = filename;
+          link.click();
+          URL.revokeObjectURL(link.href);
+          renderAll();
+        });
       }
 
       async function personalizeTool() {
         await waitForDemoReady();
         const request = document.getElementById("toolRequestInput").value.trim();
         if (!request) return;
-        state.backend = await withBusy(
+        state.backend = await withButtonBusy("applyPreferenceButton",
           "Saving preference",
           "Updating the tool and checking whether this preference should be remembered for later runs...",
           () => api("/tool/personalize", {
@@ -3300,7 +3381,7 @@
 
       async function generateTool() {
         await waitForDemoReady();
-        state.backend = await withBusy(
+        state.backend = await withButtonBusy("toolPrimaryButton",
           "Generating tool",
           "Turning the repeated CSV-to-Excel cleanup into a reusable helper for this run...",
           () => api("/tool/generate", { method: "POST" })
@@ -3332,7 +3413,7 @@
 
       async function injectSampleEmail() {
         await waitForDemoReady();
-        state.backend = await withBusy(
+        state.backend = await withButtonBusy("receiveMailButton",
           "Receiving sample mail",
           "Pulling the reviewer request into Outlook and extracting the formula change...",
           () => api("/inbox/inject", {
@@ -3351,7 +3432,7 @@
       async function syncGmail() {
         await waitForDemoReady();
         try {
-          const result = await withBusy(
+          const result = await withButtonBusy("syncMailButton",
             "Checking Gmail",
             "Looking for any reviewer updates that should change the next tool run...",
             () => api("/inbox/sync-gmail", { method: "POST" })
@@ -3367,7 +3448,7 @@
 
       async function applyAnalystUpdate() {
         await waitForDemoReady();
-        state.backend = await withBusy(
+        state.backend = await withButtonBusy("applyAnalystUpdateButton",
           "Updating tool",
           "Applying the email-driven formula change to the current build and saving it into memory...",
           () => api("/tool/apply-pending", { method: "POST" })
@@ -3478,6 +3559,18 @@
       document.getElementById("seedPriorityFormulaButton").addEventListener("click", () => void seedPriorityFormula());
       document.getElementById("fillDownButton").addEventListener("click", () => void fillPriorityDown());
       document.getElementById("saveXlsxButton").addEventListener("click", () => void saveWorkbook());
+      document.getElementById("sampleThresholdFormulaButton").addEventListener("click", async () => {
+        await navigator.clipboard.writeText(SAMPLE_THRESHOLD_FORMULA).catch(() => {});
+        loadSampleFormula(SAMPLE_THRESHOLD_FORMULA);
+      });
+      document.getElementById("sampleStageFormulaButton").addEventListener("click", async () => {
+        await navigator.clipboard.writeText(SAMPLE_STAGE_FORMULA).catch(() => {});
+        loadSampleFormula(SAMPLE_STAGE_FORMULA);
+      });
+      document.getElementById("copyFormulaButton").addEventListener("click", async () => {
+        const value = document.getElementById("formulaBarInput").value || getFormulaBarValue(state.workbook.selectedCell);
+        await navigator.clipboard.writeText(value).catch(() => {});
+      });
       document.getElementById("applyFormulaButton").addEventListener("click", () => void applyFormulaBar());
       document.getElementById("clearFormulaButton").addEventListener("click", () => {
         document.getElementById("formulaBarInput").value = "";
