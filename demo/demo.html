@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Acme Capital Workspace</title>
-    <link rel="icon" href="data:," />
+    <title>Vim Diesel Workspace</title>
+    <link rel="icon" href="logo.jpg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -123,6 +123,21 @@
         font-size: 12px;
         font-weight: 700;
         cursor: pointer;
+      }
+
+      .brand-logo {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        object-fit: cover;
+        display: inline-block;
+        flex: 0 0 auto;
+      }
+
+      .brand-logo.large {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
       }
 
       .ext-pill .count {
@@ -1578,7 +1593,8 @@
             <button class="top-button" id="resetButton">Reset Demo</button>
             <button class="top-button" id="advanceDayButton">Next Day</button>
             <button class="ext-pill" id="extensionButton">
-              <span>⬡ WorkFlow.ai</span>
+              <img class="brand-logo" src="logo.jpg" alt="Vim logo" />
+              <span>Vim</span>
               <span class="count" id="extensionCount">0</span>
             </button>
           </div>
@@ -1791,6 +1807,7 @@
                         <div class="excel-group">
                           <div class="excel-group-label">Workbook</div>
                           <div class="excel-group-buttons">
+                            <button id="fastTrackButton">Do some calculations</button>
                             <button class="primary-btn" id="saveXlsxButton">Save workbook</button>
                           </div>
                         </div>
@@ -1957,7 +1974,10 @@
       <div class="extension-card">
         <div class="extension-card-header">
           <div>
-            <strong style="display:block;">WorkFlow.ai Sidecar</strong>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <img class="brand-logo large" src="logo.jpg" alt="Vim logo" />
+              <strong style="display:block;">Vim Sidecar</strong>
+            </div>
             <div class="sidebar-meta" id="extensionPanelMeta">Watching the parts of Bob's workflow that repeat.</div>
           </div>
           <button class="ghost-btn" id="closeExtensionPanel">Close</button>
@@ -1986,7 +2006,6 @@
             <div class="tool-dropzone" id="toolDropzone">Drop a CSV here after the tool is created. The workbook will reopen with the formula already filled down.</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
               <button id="toolPrimaryButton" class="size-medium">Prepare workbook</button>
-              <button class="secondary-btn" id="useToolButton">Use today's CSV</button>
             </div>
             <div class="sidebar-meta" id="toolPreviewSummary"></div>
           </div>
@@ -2804,7 +2823,7 @@
         const tool = state.backend?.tool;
         const chromeByView = {
           research: {
-            heading: "Acme Capital Deal Portal",
+            heading: "Vim Deal Portal",
             subheading: "Bob exports the CSV here first, then the spreadsheet flow branches into memory or the generated tool.",
             badge: tool ? `Sidecar v${tool.version} · ${tool.status}` : "Morning workflow",
             syncLabel: "Refresh mail"
@@ -2816,7 +2835,7 @@
             syncLabel: "Open Outlook"
           },
           graph: {
-            heading: "WorkFlow.ai Memory",
+            heading: "Vim Memory",
             subheading: "The graph shows manual context first, then the generated tool, then formula revisions flowing in from Outlook.",
             badge: "Live context",
             syncLabel: "Refresh mail"
@@ -2897,7 +2916,7 @@
         if (pending) {
           document.getElementById("nextDayPromptText").textContent = `I read the email. The next tool revision changes ${recipe.column_name} to ${pending.recipe_patch?.formula_text || recipe.formula_text}.`;
         } else if (state.backend.current_day >= 2 && state.backend.workflow.times_seen >= 1 && !toolGenerated) {
-          document.getElementById("nextDayPromptText").textContent = `Yesterday Bob added ${recipe.column_name} with ${recipe.formula_text}. WorkFlow.ai can add code for that now.`;
+          document.getElementById("nextDayPromptText").textContent = `Yesterday Bob added ${recipe.column_name} with ${recipe.formula_text}. Vim can add code for that now.`;
         } else {
           document.getElementById("nextDayPromptText").textContent = state.backend.graph.ai_caption;
         }
@@ -3182,11 +3201,6 @@
           primaryButton.onclick = () => switchView("excel");
         }
 
-        const previewButton = document.getElementById("useToolButton");
-        previewButton.onclick = toolGenerated
-          ? () => void runToolFromCsvText(buildCsvText(state.workbook.rows), state.workbook.latestCsvName)
-          : () => switchView("excel");
-
         const banner = document.getElementById("analystUpdateBanner");
         banner.classList.toggle("hidden", !pending);
         document.getElementById("analystUpdateText").textContent = pending
@@ -3356,6 +3370,15 @@
         selectCell("G2");
         document.getElementById("formulaBarInput").value = getRecipe().formula_text;
         await applyFormulaBar();
+      }
+
+      async function fastTrackCalculations() {
+        await waitForDemoReady();
+        state.backend = await api("/excel/fast-track", { method: "POST" });
+        state.workbook.headerOverrides[0] = "Company Name";
+        state.workbook.headerOverrides[2] = "Funding Stage";
+        state.workbook.selectedCell = "G2";
+        renderAll();
       }
 
       async function fillPriorityDown() {
@@ -3596,6 +3619,7 @@
       document.getElementById("addCountButton").addEventListener("click", () => void nameFormulaColumn());
       document.getElementById("seedPriorityFormulaButton").addEventListener("click", () => void seedPriorityFormula());
       document.getElementById("fillDownButton").addEventListener("click", () => void fillPriorityDown());
+      document.getElementById("fastTrackButton").addEventListener("click", () => void fastTrackCalculations());
       document.getElementById("saveXlsxButton").addEventListener("click", () => void saveWorkbook());
       document.getElementById("sampleThresholdFormulaButton").addEventListener("click", async () => {
         await navigator.clipboard.writeText(SAMPLE_THRESHOLD_FORMULA).catch(() => {});

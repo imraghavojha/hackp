@@ -398,6 +398,31 @@ class ShowcaseDemoStore:
             self._save_unlocked(state)
             return deepcopy(state)
 
+    def fast_track_excel(self) -> dict[str, Any]:
+        with self._lock:
+            state = self._load_unlocked()
+            recipe = state["tool"]["recipe"]
+            state["timeline"].append(
+                {
+                    "timestamp": utc_now(),
+                    "action": "excel_fast_track",
+                    "detail": {
+                        "column_name": recipe["column_name"],
+                        "formula_text": recipe["formula_text"],
+                    },
+                }
+            )
+            state["workflow"]["today_actions"].append("excel_fast_track")
+            state["scenes"]["excel_opened"] = True
+            state["scenes"]["excel_headers_done"] = True
+            state["scenes"]["excel_formulas_done"] = True
+            state["workbook"]["column_added"] = True
+            state["workbook"]["formula_seeded"] = True
+            state["workbook"]["fill_down_done"] = True
+            state = _refresh_graph(state)
+            self._save_unlocked(state)
+            return deepcopy(state)
+
     def generate_tool(self) -> dict[str, Any]:
         with self._lock:
             state = self._load_unlocked()
@@ -408,7 +433,7 @@ class ShowcaseDemoStore:
                 recipe = state["tool"]["recipe"]
                 _append_change_log(
                     state,
-                    source="WorkFlow.ai",
+                    source="Vim",
                     summary="Observed the manual workbook cleanup and generated a reusable CSV-to-Excel helper.",
                     suggested_change=_suggested_change(recipe),
                     change_bullets=[

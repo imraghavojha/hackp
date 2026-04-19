@@ -1,6 +1,6 @@
 {
   "name": "personal-workflow-agent-extension",
-  "displayName": "Personal Workflow Agent",
+  "displayName": "Vim Diesel",
   "version": "0.1.0",
   "private": true,
   "type": "module",

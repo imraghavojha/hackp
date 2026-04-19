@@ -208,7 +208,7 @@ def summarize_showcase_state(payload: dict[str, Any]) -> dict[str, Any]:
     elif manual_context_seen:
         ai_caption = f"The map captured Bob's {column_name} formula and is holding that context until the tool is created."
     else:
-        ai_caption = f"Once Bob finishes the workbook pass, WorkFlow.ai can learn the {workflow_name.lower()} pattern."
+        ai_caption = f"Once Bob finishes the workbook pass, Vim can learn the {workflow_name.lower()} pattern."
 
     heuristic = {
         "headline": f"Bob has repeated '{workflow_name}' {times_seen} time(s); the latest context centers on the {column_name} formula.",

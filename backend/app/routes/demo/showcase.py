@@ -148,6 +148,12 @@ def advance_day(request: Request) -> dict[str, Any]:
     return store.advance_day()
 
 
+@router.post("/excel/fast-track")
+def fast_track_excel(request: Request) -> dict[str, Any]:
+    store = request.app.state.showcase_demo_store
+    return store.fast_track_excel()
+
+
 @router.post("/tool/personalize")
 def personalize_tool(payload: DemoToolRequest, request: Request) -> dict[str, Any]:
     store = request.app.state.showcase_demo_store

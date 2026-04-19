@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Personal Workflow Agent",
+  "name": "Vim Diesel",
   "version": "0.1.0",
   "permissions": ["storage", "activeTab", "tabs", "scripting", "alarms", "clipboardRead"],
   "host_permissions": ["http://localhost:8000/*", "https://*/*", "http://*/*"],
@@ -9,6 +9,6 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Personal Workflow Agent"
+    "default_title": "Vim Diesel"
   }
 }

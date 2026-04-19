@@ -192,7 +192,7 @@ export function PopupApp() {
           padding: 16,
           boxShadow: "0 10px 24px rgba(15, 23, 42, 0.24)"
         }}>
-        <h1 style={{ margin: "0 0 8px", fontSize: "1.1rem" }}>Personal Workflow Agent</h1>
+        <h1 style={{ margin: "0 0 8px", fontSize: "1.1rem" }}>Vim Diesel</h1>
         <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.9rem" }}>{status}</p>
         <p style={{ margin: "8px 0 0", color: "#9ca3af", fontSize: "0.82rem" }}>
           Signed in as <strong style={{ color: "#f3f4f6" }}>{settings?.userId ?? "bob"}</strong>
