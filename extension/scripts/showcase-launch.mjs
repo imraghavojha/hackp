@@ -1,8 +1,8 @@
 import path from "node:path"
 import os from "node:os"
-import { existsSync, mkdirSync } from "node:fs"
+import { existsSync, mkdirSync, rmSync } from "node:fs"
 import { fileURLToPath } from "node:url"
-import { spawn } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 
 import { chromium } from "playwright"
 
@@ -38,6 +38,21 @@ function startProcess(command, args, cwd) {
   return child
 }
 
+function stopListener(port) {
+  const lookup = spawnSync("lsof", [`-tiTCP:${port}`, "-sTCP:LISTEN"], {
+    cwd: repoRoot,
+    encoding: "utf-8"
+  })
+  if (lookup.status !== 0 || !lookup.stdout.trim()) {
+    return
+  }
+
+  for (const pid of lookup.stdout.trim().split(/\s+/)) {
+    if (!pid) continue
+    spawnSync("kill", [pid], { cwd: repoRoot, stdio: "ignore" })
+  }
+}
+
 async function waitForUrl(url, timeoutMs = 15000) {
   const startedAt = Date.now()
   while (Date.now() - startedAt < timeoutMs) {
@@ -50,10 +65,9 @@ async function waitForUrl(url, timeoutMs = 15000) {
 }
 
 async function ensureDemoServices() {
-  if (!(await isHealthy("http://127.0.0.1:8000/health"))) {
-    startProcess("python3", ["-m", "uvicorn", "backend.app.main:app", "--port", "8000"], repoRoot)
-    await waitForUrl("http://127.0.0.1:8000/health")
-  }
+  stopListener(8000)
+  startProcess("python3", ["-m", "uvicorn", "backend.app.main:app", "--port", "8000"], repoRoot)
+  await waitForUrl("http://127.0.0.1:8000/health")
 
   if (!(await isHealthy("http://127.0.0.1:8012/portal.example.com/leads/"))) {
     startProcess("python3", ["-m", "http.server", "8012", "--directory", "fixtures/mock_sites"], repoRoot)
@@ -62,19 +76,44 @@ async function ensureDemoServices() {
 }
 
 async function main() {
-  if (!existsSync(extensionPath) || !existsSync(path.join(extensionPath, "manifest.json"))) {
-    throw new Error(`Built extension not found at ${extensionPath}. Run 'npm run build' first.`)
-  }
-
   await ensureDemoServices()
 
   await fetch("http://127.0.0.1:8000/demo/showcase/reset", { method: "POST" })
 
+  const headless = process.argv.includes("--headless")
+  const normalProfile = process.argv.includes("--normal")
+
+  if (normalProfile && !headless) {
+    const url = "http://127.0.0.1:8012/portal.example.com/leads/"
+    const opener = spawn("open", ["-a", "Google Chrome", url], {
+      cwd: repoRoot,
+      stdio: "ignore",
+      detached: false
+    })
+    backgroundChildren.push(opener)
+    console.log("Showcase opened in your normal Google Chrome profile.")
+    console.log("URL:", url)
+    console.log("This mode uses whatever extensions are already installed in that profile.")
+    return
+  }
+
+  const build = spawnSync("npm", ["run", "build"], {
+    cwd: extensionRoot,
+    stdio: "inherit"
+  })
+  if (build.status !== 0) {
+    throw new Error("Extension build failed")
+  }
+
+  if (!existsSync(extensionPath) || !existsSync(path.join(extensionPath, "manifest.json"))) {
+    throw new Error(`Built extension not found at ${extensionPath}. Run 'npm run build' first.`)
+  }
+
   const userDataDir = path.join(os.homedir(), ".hackp-showcase-browser")
   const downloadsDir = path.join(os.homedir(), "Downloads")
+  rmSync(userDataDir, { recursive: true, force: true })
   mkdirSync(userDataDir, { recursive: true })
   mkdirSync(downloadsDir, { recursive: true })
-  const headless = process.argv.includes("--headless")
 
   const context = await chromium.launchPersistentContext(userDataDir, {
     channel: "chromium",

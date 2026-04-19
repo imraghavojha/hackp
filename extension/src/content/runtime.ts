@@ -217,6 +217,12 @@ async function refreshSuggestion(
     })
     const analysis = analysisResponse.ok ? analysisResponse.analysis ?? null : null
 
+    if (isShowcasePortalUrl(window.location.href)) {
+      context.currentToast?.dispose()
+      context.currentToast = null
+      return
+    }
+
     if (suppressSuggestion) {
       context.currentToast?.dispose()
       context.currentToast = null

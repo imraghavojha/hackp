@@ -2299,6 +2299,38 @@
         ].join("\n");
       }
 
+      function toBase64Utf8(value) {
+        return btoa(unescape(encodeURIComponent(value)))
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=+$/g, "");
+      }
+
+      function triggerDownload(url, filename) {
+        const link = document.createElement("a");
+        link.href = url;
+        if (filename) {
+          link.download = filename;
+        }
+        link.rel = "noopener";
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        window.setTimeout(() => {
+          link.remove();
+        }, 1500);
+      }
+
+      function buildWorkbookDownloadRows() {
+        const rows = [];
+        rows.push(["A", "B", "C", "D", "E", "F", "G"].map((columnLetter) => getCellValue(`${columnLetter}1`)));
+        for (let index = 0; index < state.workbook.rows.length; index += 1) {
+          const rowNumber = index + 2;
+          rows.push(["A", "B", "C", "D", "E", "F", "G"].map((columnLetter) => getCellValue(`${columnLetter}${rowNumber}`)));
+        }
+        return rows;
+      }
+
       function parseCsvText(text) {
         const lines = text.trim().split(/\r?\n/).filter(Boolean);
         if (lines.length < 2) {
@@ -2728,6 +2760,14 @@
         delete document.body.dataset.transition;
         updateDayTheme();
         renderAll();
+        if (state.backend.current_day >= 2 && state.backend.workflow.times_seen >= 1 && !state.backend.scenes.tool_generated) {
+          showToast("I saw yesterday's spreadsheet steps. Want me to add code for that workflow?");
+          window.setTimeout(() => {
+            if (!state.extensionOpen) {
+              openExtensionPanel();
+            }
+          }, 320);
+        }
       }
 
       function switchView(view) {
@@ -3263,13 +3303,12 @@
         const exportedRows = getFilteredResearchRows().map(toWorkbookRow);
         state.workbook.rows = cloneRows(exportedRows);
         const csv = buildCsvText(exportedRows);
-        const blob = new Blob([csv], { type: "text/csv" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = "fintech_shortlist_2026-04-16.csv";
-        link.click();
-        URL.revokeObjectURL(link.href);
         state.workbook.latestCsvName = "fintech_shortlist_2026-04-16.csv";
+        const csvUrl = `${DEMO_API_BASE}/download/csv?${new URLSearchParams({
+          filename: state.workbook.latestCsvName,
+          content_b64: toBase64Utf8(csv)
+        }).toString()}`;
+        triggerDownload(csvUrl, state.workbook.latestCsvName);
         await recordAction("portal_exported", { filename: state.workbook.latestCsvName });
         await recordAction("excel_opened", { source: "export" });
         emitDemoAction("file_download", csv, { tag: "button", role: "button", text: "Export CSV", aria_label: null }, { step: "export-csv" });
@@ -3354,12 +3393,11 @@
         await withButtonBusy("saveXlsxButton", "Saving workbook", "Packaging the cleaned workbook for the next step...", async () => {
           await recordAction("xlsx_saved", { filename, recipe_patch: getRecipe() });
           emitDemoAction("file_download", filename, { tag: "button", role: null, text: "Save workbook", aria_label: null }, { step: "save-xlsx" });
-          const blob = new Blob(["placeholder xlsx demo export"], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = filename;
-          link.click();
-          URL.revokeObjectURL(link.href);
+          const workbookUrl = `${DEMO_API_BASE}/download/xlsx?${new URLSearchParams({
+            filename,
+            rows_b64: toBase64Utf8(JSON.stringify(buildWorkbookDownloadRows()))
+          }).toString()}`;
+          triggerDownload(workbookUrl, filename);
           renderAll();
         });
       }

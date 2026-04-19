@@ -165,9 +165,26 @@ def _refresh_graph(state: dict[str, Any]) -> dict[str, Any]:
     tool = state["tool"]
     workbook = state["workbook"]
     inbox = state["inbox"]
+    scenes = state["scenes"]
     recipe = tool["recipe"]
     summary = summarize_showcase_state(state)
     tool_generated = bool(state["scenes"].get("tool_generated"))
+    portal_seen = bool(scenes.get("portal_exported") or workflow["times_seen"] >= 1 or workbook.get("generated_by_tool"))
+    excel_seen = bool(
+        scenes.get("excel_opened")
+        or scenes.get("excel_headers_done")
+        or scenes.get("excel_formulas_done")
+        or scenes.get("xlsx_saved")
+        or workflow["times_seen"] >= 1
+        or workbook.get("generated_by_tool")
+    )
+    memory_seen = bool(
+        workflow["times_seen"] >= 1
+        or workbook.get("generated_by_tool")
+        or tool_generated
+        or tool.get("personalization_notes")
+        or inbox.get("pending_update")
+    )
 
     nodes = [
         {"id": "bob", "label": "Bob", "kind": "person", "x": 100, "y": 180, "size": "lg"},
@@ -180,24 +197,30 @@ def _refresh_graph(state: dict[str, Any]) -> dict[str, Any]:
             "size": "xl",
             "count": workflow["times_seen"],
         },
-        {"id": "portal", "label": "CSV export", "kind": "step", "x": 515, "y": 88, "size": "md"},
-        {"id": "excel", "label": "Excel cleanup", "kind": "step", "x": 520, "y": 258, "size": "md"},
-        {
-            "id": "memory",
-            "label": "Workflow memory",
-            "kind": "memory",
-            "x": 770,
-            "y": 168,
-            "size": "lg",
-            "count": workflow["times_seen"],
-        },
     ]
-    edges = [
-        {"from": "bob", "to": "workflow", "label": f"{workflow['times_seen']} observed runs"},
-        {"from": "workflow", "to": "portal", "label": "download CSV"},
-        {"from": "workflow", "to": "excel", "label": "open + edit workbook"},
-        {"from": "workflow", "to": "memory", "label": "pattern retained"},
-    ]
+    edges = [{"from": "bob", "to": "workflow", "label": f"{workflow['times_seen']} observed runs"}]
+
+    if portal_seen:
+        nodes.append({"id": "portal", "label": "CSV export", "kind": "step", "x": 515, "y": 88, "size": "md"})
+        edges.append({"from": "workflow", "to": "portal", "label": "download CSV"})
+
+    if excel_seen:
+        nodes.append({"id": "excel", "label": "Excel cleanup", "kind": "step", "x": 520, "y": 258, "size": "md"})
+        edges.append({"from": "workflow", "to": "excel", "label": "open + edit workbook"})
+
+    if memory_seen:
+        nodes.append(
+            {
+                "id": "memory",
+                "label": "Workflow memory",
+                "kind": "memory",
+                "x": 770,
+                "y": 168,
+                "size": "lg",
+                "count": workflow["times_seen"],
+            }
+        )
+        edges.append({"from": "workflow", "to": "memory", "label": "pattern retained"})
 
     if workbook.get("column_added") or workbook.get("formula_seeded") or workflow["times_seen"] >= 1:
         nodes.append(
