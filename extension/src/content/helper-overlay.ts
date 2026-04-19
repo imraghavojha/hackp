@@ -241,7 +241,7 @@ export async function showInlineHelper(tool: ToolRecord, analysis: AnalysisRecor
           <div class="pwa-helper-subtitle">${tool.trigger.prompt}</div>
         </div>
         <div class="pwa-helper-actions">
-          <button class="primary" data-action="popout">Open in separate window</button>
+          <button class="primary" data-action="popout">Open on this page</button>
           <button class="ghost" data-action="close">Close</button>
         </div>
       </header>

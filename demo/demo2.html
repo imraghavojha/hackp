@@ -31,6 +31,7 @@
       body {
         margin: 0;
         min-height: 100vh;
+        padding: 0;
         background:
           radial-gradient(circle at top right, rgba(34, 89, 199, 0.12), transparent 26%),
           radial-gradient(circle at left 20%, rgba(16, 124, 65, 0.08), transparent 24%),
@@ -51,14 +52,15 @@
       }
 
       .browser-shell {
-        width: min(1440px, calc(100vw - 28px));
-        margin: 16px auto 32px;
+        width: 100vw;
+        max-width: none;
+        min-height: 100vh;
+        margin: 0;
         border: 1px solid rgba(15, 23, 42, 0.12);
-        border-radius: 24px;
+        border-radius: 0;
         overflow: hidden;
-        box-shadow: var(--shadow);
+        box-shadow: none;
         background: rgba(255, 255, 255, 0.72);
-        backdrop-filter: blur(18px);
       }
 
       .browser-chrome {
@@ -241,7 +243,7 @@
       .page {
         display: flex;
         flex-direction: column;
-        min-height: calc(100vh - 150px);
+        min-height: calc(100vh - 166px);
       }
 
       .page-header {
@@ -309,6 +311,10 @@
         min-height: calc(100vh - 240px);
       }
 
+      .page[data-view-mode="graph"] .main-grid {
+        grid-template-columns: minmax(0, 1fr) 320px;
+      }
+
       .sidebar,
       .rightbar {
         display: none;
@@ -323,9 +329,12 @@
       .rightbar {
         border-left: 1px solid var(--border);
         padding: 18px 16px;
-        display: grid;
         align-content: start;
         gap: 14px;
+      }
+
+      .page[data-view-mode="graph"] .rightbar {
+        display: grid;
       }
 
       .sidebar-section,
@@ -472,6 +481,7 @@
       .filter {
         display: grid;
         gap: 4px;
+        min-width: 180px;
       }
 
       .filter label {
@@ -482,12 +492,30 @@
         color: var(--muted);
       }
 
-      .filter select {
+      .filter-options {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px;
+        border-radius: 12px;
         border: 1px solid var(--border);
         background: var(--surface2);
-        border-radius: 10px;
+      }
+
+      .filter-option {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        border-radius: 9px;
         padding: 8px 12px;
-        min-width: 150px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .filter-option.active {
+        background: white;
+        color: var(--fg);
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
       }
 
       table {
@@ -787,6 +815,25 @@
         height: 8px;
         border-radius: 2px;
         background: #217346;
+      }
+
+      .fill-handle {
+        position: absolute;
+        right: -4px;
+        bottom: -4px;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        background: #217346;
+        border: 2px solid white;
+        cursor: crosshair;
+        z-index: 2;
+      }
+
+      .fill-preview {
+        background: #e1f7e8 !important;
+        outline: 2px dashed rgba(33, 115, 70, 0.45);
+        outline-offset: -2px;
       }
 
       .formula-cell {
@@ -1249,6 +1296,11 @@
         display: flex;
       }
 
+      body[data-transition="day-roll"] .browser-shell {
+        animation: workspace-roll 1.45s cubic-bezier(0.2, 0.9, 0.2, 1);
+        transform-origin: center top;
+      }
+
       .overlay-card {
         width: min(560px, calc(100vw - 32px));
         border-radius: 24px;
@@ -1330,6 +1382,68 @@
         height: 86px;
         border-radius: 50%;
         background: linear-gradient(180deg, rgba(15, 118, 110, 0.14), rgba(8, 47, 73, 0.6));
+      }
+
+      .busy-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.18);
+        z-index: 60;
+        backdrop-filter: blur(6px);
+      }
+
+      .busy-overlay.show {
+        display: flex;
+      }
+
+      .busy-card {
+        width: min(340px, calc(100vw - 32px));
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(111, 142, 194, 0.2);
+        box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+        padding: 24px;
+        display: grid;
+        gap: 14px;
+        justify-items: center;
+        text-align: center;
+      }
+
+      .busy-spinner {
+        width: 54px;
+        height: 54px;
+        border-radius: 999px;
+        border: 3px solid rgba(29, 78, 216, 0.16);
+        border-top-color: #1d4ed8;
+        animation: busy-spin 0.9s linear infinite;
+      }
+
+      @keyframes busy-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes workspace-roll {
+        0% {
+          transform: translateY(0) rotateX(0deg) scale(1);
+          filter: brightness(1);
+        }
+        30% {
+          transform: translateY(-16px) rotateX(10deg) scale(0.985);
+          filter: brightness(0.94);
+        }
+        62% {
+          transform: translateY(12px) rotateX(-9deg) scale(0.985);
+          filter: brightness(1.02);
+        }
+        100% {
+          transform: translateY(0) rotateX(0deg) scale(1);
+          filter: brightness(1);
+        }
       }
 
       .hidden {
@@ -1521,15 +1635,24 @@
                   <div class="filters">
                     <div class="filter">
                       <label>Segment</label>
-                      <select><option selected>Fintech</option><option>Vertical SaaS</option></select>
+                      <div class="filter-options" id="segmentFilter">
+                        <button class="filter-option active" data-filter-group="segment" data-filter-value="Fintech">Fintech</button>
+                        <button class="filter-option" data-filter-group="segment" data-filter-value="Vertical SaaS">Vertical SaaS</button>
+                      </div>
                     </div>
                     <div class="filter">
                       <label>Stage</label>
-                      <select><option selected>Series B+</option><option>Seed+</option></select>
+                      <div class="filter-options" id="stageFilter">
+                        <button class="filter-option active" data-filter-group="stage" data-filter-value="Series B+">Series B+</button>
+                        <button class="filter-option" data-filter-group="stage" data-filter-value="Seed+">Seed+</button>
+                      </div>
                     </div>
                     <div class="filter">
                       <label>Window</label>
-                      <select><option selected>This week</option><option>Last 30 days</option></select>
+                      <div class="filter-options" id="windowFilter">
+                        <button class="filter-option active" data-filter-group="window" data-filter-value="This week">This week</button>
+                        <button class="filter-option" data-filter-group="window" data-filter-value="Last 30 days">Last 30 days</button>
+                      </div>
                     </div>
                   </div>
 
@@ -1539,7 +1662,7 @@
                         <h2>Shortlisted companies</h2>
                         <p>Companies heading into the morning review workbook.</p>
                       </div>
-                      <span class="badge">8 rows ready</span>
+                      <span class="badge" id="researchCountBadge">8 rows ready</span>
                     </div>
                     <div class="card-body" style="padding: 0;">
                       <table>
@@ -1552,14 +1675,7 @@
                             <th>Owner</th>
                           </tr>
                         </thead>
-                        <tbody>
-                          <tr><td><strong>ClearBridge</strong><span class="sidebar-meta">clearbridge.com</span></td><td>Payments infra</td><td><span class="stage-pill">Growth</span></td><td>490</td><td>Ana</td></tr>
-                          <tr><td><strong>NovaPay</strong><span class="sidebar-meta">novapay.io</span></td><td>Embedded finance</td><td><span class="stage-pill">Series C</span></td><td>310</td><td>Ana</td></tr>
-                          <tr><td><strong>Gamma Labs</strong><span class="sidebar-meta">gammalabs.io</span></td><td>Regtech</td><td><span class="stage-pill">Series C</span></td><td>240</td><td>Bob</td></tr>
-                          <tr><td><strong>Atlas Payments</strong><span class="sidebar-meta">atlaspay.io</span></td><td>Risk API</td><td><span class="stage-pill">Series C</span></td><td>180</td><td>Bob</td></tr>
-                          <tr><td><strong>Meridian Pay</strong><span class="sidebar-meta">meridianpay.com</span></td><td>B2B treasury</td><td><span class="stage-pill pill-green">Series B</span></td><td>130</td><td>Bob</td></tr>
-                          <tr><td><strong>Kinetic Bank</strong><span class="sidebar-meta">kineticbank.com</span></td><td>Core banking</td><td><span class="stage-pill pill-green">Series B</span></td><td>95</td><td>Bob</td></tr>
-                        </tbody>
+                        <tbody id="researchRows"></tbody>
                       </table>
                     </div>
                   </div>
@@ -1720,7 +1836,10 @@
                     <h2>Outlook</h2>
                     <p>Inbox, reviewer notes, and requests that feed back into the sidecar.</p>
                   </div>
-                  <span class="badge" id="inboxStatus">Inbox idle</span>
+                  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <button class="primary-btn" id="receiveMailButton">Receive sample mail</button>
+                    <span class="badge" id="inboxStatus">Inbox idle</span>
+                  </div>
                 </div>
                 <div class="card-body">
                   <div class="inbox-shell">
@@ -1890,6 +2009,14 @@
       </div>
     </div>
 
+    <div class="busy-overlay" id="busyOverlay">
+      <div class="busy-card">
+        <div class="busy-spinner"></div>
+        <strong id="busyTitle">Working</strong>
+        <div class="sidebar-meta" id="busyText" style="font-size:13px;">Applying the next step...</div>
+      </div>
+    </div>
+
     <div class="guide-bar">
       <div class="guide-step">
         <strong id="guideLabel">Step 1</strong>
@@ -1904,23 +2031,45 @@
     <script>
       const DEMO_API_BASE = "http://127.0.0.1:8000/demo/showcase";
       const TOOL_URL = "portal.example.com/leads";
-      const CSV_ROWS = [
-        { company: "ClearBridge", model: "Payments infra", stage: "Growth", employees: 490, owner: "Ana" },
-        { company: "NovaPay", model: "Embedded finance", stage: "Series C", employees: 310, owner: "Ana" },
-        { company: "Gamma Labs", model: "Regtech", stage: "Series C", employees: 240, owner: "Bob" },
-        { company: "Atlas Payments", model: "Risk API", stage: "Series C", employees: 180, owner: "Bob" },
-        { company: "Meridian Pay", model: "B2B treasury", stage: "Series B", employees: 130, owner: "Bob" },
-        { company: "Kinetic Bank", model: "Core banking", stage: "Series B", employees: 95, owner: "Bob" }
+      const LEAD_ROWS = [
+        { company: "ClearBridge", domain: "clearbridge.com", segment: "Fintech", model: "Payments infra", stage: "Growth", employees: 490, owner: "Ana", window: "This week" },
+        { company: "NovaPay", domain: "novapay.io", segment: "Fintech", model: "Embedded finance", stage: "Series C", employees: 310, owner: "Ana", window: "This week" },
+        { company: "Gamma Labs", domain: "gammalabs.io", segment: "Fintech", model: "Regtech", stage: "Series C", employees: 240, owner: "Bob", window: "This week" },
+        { company: "Atlas Payments", domain: "atlaspay.io", segment: "Fintech", model: "Risk API", stage: "Series C", employees: 180, owner: "Bob", window: "This week" },
+        { company: "Meridian Pay", domain: "meridianpay.com", segment: "Fintech", model: "B2B treasury", stage: "Series B", employees: 130, owner: "Bob", window: "This week" },
+        { company: "Kinetic Bank", domain: "kineticbank.com", segment: "Fintech", model: "Core banking", stage: "Series B", employees: 95, owner: "Bob", window: "This week" },
+        { company: "ScribeStack", domain: "scribestack.com", segment: "Vertical SaaS", model: "Vertical workflow", stage: "Series B", employees: 155, owner: "Ivy", window: "Last 30 days" },
+        { company: "HarborOps", domain: "harborops.io", segment: "Vertical SaaS", model: "Ops platform", stage: "Seed", employees: 58, owner: "Ivy", window: "Last 30 days" }
       ];
 
       function cloneRows(rows) {
         return rows.map((row) => ({ ...row }));
       }
 
+      function toWorkbookRow(row) {
+        return {
+          company: row.company,
+          model: row.model,
+          stage: row.stage,
+          employees: row.employees,
+          owner: row.owner
+        };
+      }
+
+      function createResearchState() {
+        return {
+          segment: "Fintech",
+          stage: "Series B+",
+          window: "This week"
+        };
+      }
+
       function createWorkbookState() {
         return {
-          rows: cloneRows(CSV_ROWS),
+          rows: cloneRows(LEAD_ROWS.filter((row) => row.segment === "Fintech" && row.window === "This week").map(toWorkbookRow)),
           headerOverrides: {},
+          manualCells: {},
+          fillDrag: null,
           selectedCell: "A1",
           latestCsvName: "fintech_shortlist_2026-04-16.csv"
         };
@@ -1928,10 +2077,16 @@
 
       const state = {
         backend: null,
+        research: createResearchState(),
         workbook: createWorkbookState(),
         selectedView: "research",
         selectedMailId: null,
-        extensionOpen: false
+        extensionOpen: false,
+        busy: {
+          active: false,
+          title: "Working",
+          text: "Applying the next step..."
+        }
       };
       window.demoState = state;
       let demoReadyPromise = Promise.resolve();
@@ -1992,6 +2147,62 @@
           current_input_name: null,
           current_output_name: null
         };
+      }
+
+      function getFilteredResearchRows() {
+        return LEAD_ROWS.filter((row) => {
+          const matchesSegment = row.segment === state.research.segment;
+          const matchesWindow = row.window === state.research.window;
+          const matchesStage = state.research.stage === "Series B+"
+            ? row.stage === "Series B" || row.stage === "Series C" || row.stage === "Growth"
+            : row.stage === "Seed";
+          return matchesSegment && matchesWindow && matchesStage;
+        });
+      }
+
+      function renderResearchTable() {
+        const rows = getFilteredResearchRows();
+        document.getElementById("researchRows").innerHTML = rows.length
+          ? rows.map((row) => `
+              <tr>
+                <td><strong>${row.company}</strong><span class="sidebar-meta">${row.domain}</span></td>
+                <td>${row.model}</td>
+                <td><span class="stage-pill ${row.stage === "Series B" ? "pill-green" : ""}">${row.stage}</span></td>
+                <td>${row.employees}</td>
+                <td>${row.owner}</td>
+              </tr>
+            `).join("")
+          : `<tr><td colspan="5" style="padding:18px;color:var(--muted);">No companies match this filter set.</td></tr>`;
+        document.getElementById("researchCountBadge").textContent = `${rows.length} rows ready`;
+      }
+
+      function renderFilterControls() {
+        document.querySelectorAll("[data-filter-group]").forEach((button) => {
+          const group = button.dataset.filterGroup;
+          const value = button.dataset.filterValue;
+          button.classList.toggle("active", state.research[group] === value);
+        });
+      }
+
+      function showBusy(title, text) {
+        state.busy = { active: true, title, text };
+        document.getElementById("busyTitle").textContent = title;
+        document.getElementById("busyText").textContent = text;
+        document.getElementById("busyOverlay").classList.add("show");
+      }
+
+      function hideBusy() {
+        state.busy.active = false;
+        document.getElementById("busyOverlay").classList.remove("show");
+      }
+
+      async function withBusy(title, text, fn) {
+        showBusy(title, text);
+        try {
+          return await fn();
+        } finally {
+          hideBusy();
+        }
       }
 
       function getBaseHeaders() {
@@ -2086,7 +2297,34 @@
         return state.workbook.rows.length + 2;
       }
 
+      function getManualCellValue(cellRef) {
+        return Object.prototype.hasOwnProperty.call(state.workbook.manualCells, cellRef)
+          ? state.workbook.manualCells[cellRef]
+          : null;
+      }
+
+      function getCellInputValue(cellRef) {
+        const manual = getManualCellValue(cellRef);
+        if (manual !== null) {
+          return manual;
+        }
+        const column = cellRef.replace(/[0-9]/g, "");
+        const row = Number(cellRef.replace(/[^0-9]/g, ""));
+        if (column === "G" && row >= 2 && hasFormulaColumn()) {
+          const workbook = getWorkbookFlags();
+          if (workbook.formula_seeded || workbook.generated_by_tool) {
+            return getRecipe().formula_text;
+          }
+        }
+        return getCellValue(cellRef);
+      }
+
       function getCellValue(cellRef) {
+        const manual = getManualCellValue(cellRef);
+        if (manual !== null) {
+          return manual;
+        }
+
         const column = cellRef.replace(/[0-9]/g, "");
         const row = Number(cellRef.replace(/[^0-9]/g, ""));
         const recipe = getRecipe();
@@ -2128,15 +2366,7 @@
       }
 
       function getFormulaBarValue(cellRef) {
-        const column = cellRef.replace(/[0-9]/g, "");
-        const row = Number(cellRef.replace(/[^0-9]/g, ""));
-        if (column === "G" && row >= 2 && hasFormulaColumn()) {
-          const workbook = getWorkbookFlags();
-          if (workbook.formula_seeded || workbook.generated_by_tool) {
-            return getRecipe().formula_text;
-          }
-        }
-        return getCellValue(cellRef);
+        return getCellInputValue(cellRef);
       }
 
       function selectCell(cellRef) {
@@ -2144,15 +2374,162 @@
         document.getElementById("formulaRef").textContent = cellRef;
         document.getElementById("formulaBarInput").value = getFormulaBarValue(cellRef);
         document.querySelectorAll(".sheet-grid .selected-cell").forEach((cell) => cell.classList.remove("selected-cell"));
+        document.querySelectorAll(".fill-handle").forEach((handle) => handle.remove());
         const selected = document.querySelector(`[data-cell-ref="${cellRef}"]`);
         if (selected) {
           selected.classList.add("selected-cell");
+          if (!(selected.tagName === "TH" && cellRef.endsWith("1"))) {
+            const handle = document.createElement("span");
+            handle.className = "fill-handle";
+            handle.dataset.extensionOwned = "true";
+            handle.addEventListener("pointerdown", beginFillDrag);
+            selected.appendChild(handle);
+          }
         }
+      }
+
+      function isFormulaBarTarget(target) {
+        return target instanceof HTMLElement
+          && Boolean(target.closest(".formula-bar"));
+      }
+
+      async function applyDirectCellEdit(cellRef, value, options = {}) {
+        if (value === getCellValue(cellRef)) {
+          return;
+        }
+        await applyCellEdit(cellRef, value, { fromInline: true, ...options });
+      }
+
+      async function applyCellEdit(cellRef, value, options = {}) {
+        const column = cellRef.replace(/[0-9]/g, "");
+        const row = Number(cellRef.replace(/[^0-9]/g, ""));
+        const summaryRow = getSummaryRowNumber();
+
+        if (row === 1 && column === "A") {
+          state.workbook.headerOverrides[0] = value;
+          await recordAction("excel_headers_done", { changed: `company -> ${value}` });
+        } else if (row === 1 && column === "C") {
+          state.workbook.headerOverrides[2] = value;
+          await recordAction("excel_headers_done", { changed: `stage -> ${value}` });
+        } else if (row === 1 && column === "G") {
+          await recordAction("excel_column_added", {
+            column_name: value,
+            recipe_patch: { ...getRecipe(), column_name: value }
+          });
+        } else if (row >= 2 && row < summaryRow && column === "A") {
+          state.workbook.rows[row - 2].company = value;
+        } else if (row >= 2 && row < summaryRow && column === "B") {
+          state.workbook.rows[row - 2].model = value;
+        } else if (row >= 2 && row < summaryRow && column === "C") {
+          state.workbook.rows[row - 2].stage = value;
+        } else if (row >= 2 && row < summaryRow && column === "D") {
+          state.workbook.rows[row - 2].employees = Number(value) || 0;
+        } else if (row >= 2 && row < summaryRow && column === "E") {
+          state.workbook.rows[row - 2].owner = value;
+        } else if (row === 2 && column === "G" && value.startsWith("=")) {
+          const recipePatch = extractRecipePatchFromFormula(value, getRecipe());
+          if (!hasFormulaColumn()) {
+            await recordAction("excel_column_added", {
+              column_name: recipePatch.column_name,
+              recipe_patch: recipePatch
+            });
+          }
+          await recordAction("excel_formula_seeded", {
+            formula: value,
+            recipe_patch: recipePatch
+          });
+        } else {
+          state.workbook.manualCells[cellRef] = value;
+        }
+
+        if (!options.skipRender && !options.suppressRender) {
+          renderAll();
+        }
+      }
+
+      function beginFillDrag(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        state.workbook.fillDrag = {
+          sourceRef: state.workbook.selectedCell,
+          targetRef: state.workbook.selectedCell
+        };
+      }
+
+      function updateFillPreview(targetRef) {
+        document.querySelectorAll(".fill-preview").forEach((cell) => cell.classList.remove("fill-preview"));
+        if (!state.workbook.fillDrag || !targetRef) {
+          return;
+        }
+        const sourceRef = state.workbook.fillDrag.sourceRef;
+        const sourceColumn = sourceRef.replace(/[0-9]/g, "");
+        const sourceRow = Number(sourceRef.replace(/[^0-9]/g, ""));
+        const targetColumn = targetRef.replace(/[0-9]/g, "");
+        const targetRow = Number(targetRef.replace(/[^0-9]/g, ""));
+        if (sourceColumn !== targetColumn || targetRow < sourceRow) {
+          return;
+        }
+        for (let row = sourceRow; row <= targetRow; row += 1) {
+          const cell = document.querySelector(`[data-cell-ref="${sourceColumn}${row}"]`);
+          cell?.classList.add("fill-preview");
+        }
+      }
+
+      async function applyFillDrag() {
+        const drag = state.workbook.fillDrag;
+        state.workbook.fillDrag = null;
+        document.querySelectorAll(".fill-preview").forEach((cell) => cell.classList.remove("fill-preview"));
+        if (!drag || drag.sourceRef === drag.targetRef) {
+          return;
+        }
+
+        const sourceColumn = drag.sourceRef.replace(/[0-9]/g, "");
+        const sourceRow = Number(drag.sourceRef.replace(/[^0-9]/g, ""));
+        const targetColumn = drag.targetRef.replace(/[0-9]/g, "");
+        const targetRow = Number(drag.targetRef.replace(/[^0-9]/g, ""));
+        if (sourceColumn !== targetColumn || targetRow < sourceRow) {
+          return;
+        }
+
+        if (drag.sourceRef === "G2" && getCellInputValue("G2").startsWith("=")) {
+          await recordAction("excel_fill_down", { fill_range: `G2:G${targetRow}`, recipe_patch: getRecipe() });
+          renderAll();
+          return;
+        }
+
+        const sourceInput = getCellInputValue(drag.sourceRef);
+        for (let row = sourceRow + 1; row <= targetRow; row += 1) {
+          await applyCellEdit(`${sourceColumn}${row}`, sourceInput, { skipRender: true });
+        }
+        renderAll();
       }
 
       function bindSheetInteractions() {
         document.querySelectorAll("[data-cell-ref]").forEach((cell) => {
-          cell.addEventListener("click", () => selectCell(cell.dataset.cellRef));
+          const cellRef = cell.dataset.cellRef;
+          cell.addEventListener("click", () => selectCell(cellRef));
+          cell.addEventListener("focus", () => selectCell(cellRef));
+          cell.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              document.getElementById("formulaBarInput").focus();
+              return;
+            }
+
+            if (event.key === "Backspace" || event.key === "Delete") {
+              event.preventDefault();
+              document.getElementById("formulaBarInput").value = "";
+              document.getElementById("formulaBarInput").focus();
+              return;
+            }
+
+            if (event.key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
+              event.preventDefault();
+              const input = document.getElementById("formulaBarInput");
+              input.value = event.key;
+              input.focus();
+            }
+          });
         });
         selectCell(state.workbook.selectedCell);
       }
@@ -2166,25 +2543,24 @@
             <td class="row-number">1</td>
             ${headerValues.map((header, index) => {
               const ref = `${"ABCDEFG"[index]}1`;
-              const editable = ref === "A1" || ref === "C1" || ref === "G1";
-              return `<th data-cell-ref="${ref}" class="${editable ? "editable" : ""}">${header}</th>`;
+              return `<th data-cell-ref="${ref}" class="editable" tabindex="0">${header}</th>`;
             }).join("")}
           </tr>
         `);
 
         state.workbook.rows.forEach((record, index) => {
           const rowNumber = index + 2;
-          const gClass = hasFormulaColumn() ? (formulaFilledForRow(rowNumber) ? "formula-cell" : "editable") : "editable";
+          const gClass = hasFormulaColumn() ? (formulaFilledForRow(rowNumber) ? "formula-cell editable" : "editable") : "editable";
           rows.push(`
             <tr>
               <td class="row-number">${rowNumber}</td>
-              <td data-cell-ref="A${rowNumber}">${record.company}</td>
-              <td data-cell-ref="B${rowNumber}">${record.model}</td>
-              <td data-cell-ref="C${rowNumber}">${record.stage}</td>
-              <td data-cell-ref="D${rowNumber}">${record.employees}</td>
-              <td data-cell-ref="E${rowNumber}">${record.owner}</td>
-              <td data-cell-ref="F${rowNumber}">[Q2-Outbound-Fintech-BM]</td>
-              <td data-cell-ref="G${rowNumber}" class="${gClass}">${getCellValue(`G${rowNumber}`)}</td>
+              <td data-cell-ref="A${rowNumber}" class="editable" tabindex="0">${record.company}</td>
+              <td data-cell-ref="B${rowNumber}" class="editable" tabindex="0">${record.model}</td>
+              <td data-cell-ref="C${rowNumber}" class="editable" tabindex="0">${record.stage}</td>
+              <td data-cell-ref="D${rowNumber}" class="editable" tabindex="0">${record.employees}</td>
+              <td data-cell-ref="E${rowNumber}" class="editable" tabindex="0">${record.owner}</td>
+              <td data-cell-ref="F${rowNumber}" class="editable" tabindex="0">${getCellValue(`F${rowNumber}`)}</td>
+              <td data-cell-ref="G${rowNumber}" class="${gClass}" tabindex="0">${getCellValue(`G${rowNumber}`)}</td>
             </tr>
           `);
         });
@@ -2192,13 +2568,13 @@
         rows.push(`
           <tr>
             <td class="row-number">${summaryRow}</td>
-            <td data-cell-ref="A${summaryRow}"></td>
-            <td data-cell-ref="B${summaryRow}"></td>
-            <td data-cell-ref="C${summaryRow}"></td>
-            <td data-cell-ref="D${summaryRow}"></td>
-            <td data-cell-ref="E${summaryRow}"></td>
-            <td data-cell-ref="F${summaryRow}"></td>
-            <td data-cell-ref="G${summaryRow}" class="${getWorkbookFlags().generated_by_tool ? "formula-cell" : ""}">${getWorkbookFlags().generated_by_tool ? "Tool output ready" : ""}</td>
+            <td data-cell-ref="A${summaryRow}" class="editable" tabindex="0">${getCellValue(`A${summaryRow}`)}</td>
+            <td data-cell-ref="B${summaryRow}" class="editable" tabindex="0">${getCellValue(`B${summaryRow}`)}</td>
+            <td data-cell-ref="C${summaryRow}" class="editable" tabindex="0">${getCellValue(`C${summaryRow}`)}</td>
+            <td data-cell-ref="D${summaryRow}" class="editable" tabindex="0">${getCellValue(`D${summaryRow}`)}</td>
+            <td data-cell-ref="E${summaryRow}" class="editable" tabindex="0">${getCellValue(`E${summaryRow}`)}</td>
+            <td data-cell-ref="F${summaryRow}" class="editable" tabindex="0">${getCellValue(`F${summaryRow}`)}</td>
+            <td data-cell-ref="G${summaryRow}" class="editable ${getWorkbookFlags().generated_by_tool ? "formula-cell" : ""}" tabindex="0">${getCellValue(`G${summaryRow}`)}</td>
           </tr>
         `);
 
@@ -2264,6 +2640,7 @@
 
       async function resetDemo() {
         state.backend = await api("/reset", { method: "POST" });
+        state.research = createResearchState();
         state.workbook = createWorkbookState();
         state.selectedMailId = null;
         state.selectedView = "research";
@@ -2272,17 +2649,20 @@
         hideToast();
         hideOverlay();
         updateDayTheme();
+        window.dispatchEvent(new CustomEvent("pwa-demo-reset"));
         renderAll();
       }
 
       async function advanceDay() {
         await waitForDemoReady();
+        document.body.dataset.transition = "day-roll";
         showOverlay("Next day", "Night rolls across the workspace, and yesterday's spreadsheet context is waiting in memory.");
         await new Promise((resolve) => setTimeout(resolve, 1450));
         state.backend = await api("/advance-day", { method: "POST" });
         state.selectedView = "research";
         state.workbook.selectedCell = "A1";
         hideOverlay();
+        delete document.body.dataset.transition;
         updateDayTheme();
         renderAll();
       }
@@ -2342,7 +2722,7 @@
             heading: "Microsoft Outlook",
             subheading: "Inject a reviewer request here and the tool will propose a new formula before Bob starts tomorrow's run.",
             badge: state.backend?.inbox?.pending_update ? "Update waiting" : "Focused inbox",
-            syncLabel: "Refresh mail"
+            syncLabel: "Receive sample mail"
           }
         };
         const chrome = chromeByView[view] || chromeByView.research;
@@ -2441,15 +2821,108 @@
         document.getElementById("todayObserverDot").classList.toggle("lit", state.backend.workflow.times_seen >= 1);
       }
 
+      function updateGraphLayout() {
+        const edgeSvg = document.getElementById("graphEdges");
+        const nodeHost = document.getElementById("graphNodes");
+        if (!edgeSvg || !nodeHost) {
+          return;
+        }
+
+        for (const node of graphRuntime.nodes) {
+          const element = nodeHost.querySelector(`[data-node-id="${node.id}"]`);
+          if (!element) continue;
+          element.style.left = `${node.x}px`;
+          element.style.top = `${node.y}px`;
+        }
+
+        edgeSvg.querySelectorAll("[data-edge-index]").forEach((group) => {
+          const edge = graphRuntime.edges[Number(group.dataset.edgeIndex)];
+          const from = graphRuntime.nodes.find((node) => node.id === edge.from);
+          const to = graphRuntime.nodes.find((node) => node.id === edge.to);
+          if (!from || !to) return;
+          const path = group.querySelector("path");
+          const label = group.querySelector("text");
+          if (!path || !label) return;
+          const bendX = (from.x + to.x) / 2;
+          const bendY = Math.min(from.y, to.y) - Math.min(42, Math.abs(to.x - from.x) * 0.08);
+          path.setAttribute("d", `M ${from.x} ${from.y} Q ${bendX} ${bendY} ${to.x} ${to.y}`);
+          label.setAttribute("x", String(bendX));
+          label.setAttribute("y", String((bendY + from.y + to.y) / 3));
+        });
+      }
+
+      function startGraphPhysics() {
+        if (graphRuntime.animationId) {
+          cancelAnimationFrame(graphRuntime.animationId);
+        }
+
+        const width = 1100;
+        const height = 460;
+        const animate = () => {
+          for (const node of graphRuntime.nodes) {
+            node.vx += (node.anchorX - node.x) * 0.0024;
+            node.vy += (node.anchorY - node.y) * 0.0024;
+          }
+
+          for (let i = 0; i < graphRuntime.nodes.length; i += 1) {
+            for (let j = i + 1; j < graphRuntime.nodes.length; j += 1) {
+              const a = graphRuntime.nodes[i];
+              const b = graphRuntime.nodes[j];
+              const dx = b.x - a.x;
+              const dy = b.y - a.y;
+              const distance = Math.max(Math.hypot(dx, dy), 1);
+              const repulsion = 8000 / (distance * distance);
+              const forceX = (dx / distance) * repulsion;
+              const forceY = (dy / distance) * repulsion;
+              a.vx -= forceX;
+              a.vy -= forceY;
+              b.vx += forceX;
+              b.vy += forceY;
+            }
+          }
+
+          for (const edge of graphRuntime.edges) {
+            const from = graphRuntime.nodes.find((node) => node.id === edge.from);
+            const to = graphRuntime.nodes.find((node) => node.id === edge.to);
+            if (!from || !to) continue;
+            const dx = to.x - from.x;
+            const dy = to.y - from.y;
+            const distance = Math.max(Math.hypot(dx, dy), 1);
+            const spring = (distance - 220) * 0.0026;
+            const forceX = (dx / distance) * spring;
+            const forceY = (dy / distance) * spring;
+            from.vx += forceX;
+            from.vy += forceY;
+            to.vx -= forceX;
+            to.vy -= forceY;
+          }
+
+          for (const node of graphRuntime.nodes) {
+            if (graphRuntime.dragNode && graphRuntime.dragNode.id === node.id) {
+              node.vx = 0;
+              node.vy = 0;
+            } else {
+              node.vx *= 0.9;
+              node.vy *= 0.9;
+              node.x = Math.min(width - node.diameter / 2, Math.max(node.diameter / 2, node.x + node.vx));
+              node.y = Math.min(height - node.diameter / 2, Math.max(node.diameter / 2, node.y + node.vy));
+            }
+          }
+
+          updateGraphLayout();
+          graphRuntime.animationId = requestAnimationFrame(animate);
+        };
+
+        graphRuntime.animationId = requestAnimationFrame(animate);
+      }
+
       function renderGraph() {
         const edgeSvg = document.getElementById("graphEdges");
         const nodeHost = document.getElementById("graphNodes");
         const nodes = state.backend.graph.nodes;
         const edges = state.backend.graph.edges;
         const sizeMap = { md: 98, lg: 126, xl: 152 };
-        if (graphRuntime.animationId) {
-          cancelAnimationFrame(graphRuntime.animationId);
-        }
+
         graphRuntime.nodes = nodes.map((node) => ({
           ...node,
           x: node.x,
@@ -2458,7 +2931,7 @@
           vy: 0,
           diameter: sizeMap[node.size] ?? 110,
           anchorX: node.x,
-          anchorY: node.y,
+          anchorY: node.y
         }));
         graphRuntime.edges = edges.map((edge) => ({ ...edge }));
 
@@ -2490,107 +2963,17 @@
             const target = event.currentTarget;
             const node = graphRuntime.nodes.find((item) => item.id === target.dataset.nodeId);
             if (!node) return;
-            const rect = target.getBoundingClientRect();
+            const rect = nodeHost.getBoundingClientRect();
             graphRuntime.dragNode = node;
-            graphRuntime.dragOffsetX = event.clientX - rect.left - node.diameter / 2;
-            graphRuntime.dragOffsetY = event.clientY - rect.top - node.diameter / 2;
+            graphRuntime.dragOffsetX = event.clientX - rect.left - node.x;
+            graphRuntime.dragOffsetY = event.clientY - rect.top - node.y;
             target.setPointerCapture(event.pointerId);
           });
         });
 
-        const applyGraphFrame = () => {
-          const width = 1100;
-          const height = 460;
-          for (const node of graphRuntime.nodes) {
-            node.vx += (node.anchorX - node.x) * 0.002;
-            node.vy += (node.anchorY - node.y) * 0.002;
-          }
+        updateGraphLayout();
+        startGraphPhysics();
 
-          for (let i = 0; i < graphRuntime.nodes.length; i += 1) {
-            for (let j = i + 1; j < graphRuntime.nodes.length; j += 1) {
-              const a = graphRuntime.nodes[i];
-              const b = graphRuntime.nodes[j];
-              const dx = b.x - a.x;
-              const dy = b.y - a.y;
-              const distance = Math.max(Math.hypot(dx, dy), 1);
-              const repulsion = 12000 / (distance * distance);
-              const forceX = (dx / distance) * repulsion;
-              const forceY = (dy / distance) * repulsion;
-              a.vx -= forceX;
-              a.vy -= forceY;
-              b.vx += forceX;
-              b.vy += forceY;
-            }
-          }
-
-          for (const edge of graphRuntime.edges) {
-            const from = graphRuntime.nodes.find((node) => node.id === edge.from);
-            const to = graphRuntime.nodes.find((node) => node.id === edge.to);
-            if (!from || !to) continue;
-            const dx = to.x - from.x;
-            const dy = to.y - from.y;
-            const distance = Math.max(Math.hypot(dx, dy), 1);
-            const spring = (distance - 230) * 0.0028;
-            const forceX = (dx / distance) * spring;
-            const forceY = (dy / distance) * spring;
-            from.vx += forceX;
-            from.vy += forceY;
-            to.vx -= forceX;
-            to.vy -= forceY;
-          }
-
-          for (const node of graphRuntime.nodes) {
-            if (graphRuntime.dragNode && graphRuntime.dragNode.id === node.id) {
-              node.vx = 0;
-              node.vy = 0;
-            } else {
-              node.vx *= 0.88;
-              node.vy *= 0.88;
-              node.x = Math.min(width - node.diameter / 2, Math.max(node.diameter / 2, node.x + node.vx));
-              node.y = Math.min(height - node.diameter / 2, Math.max(node.diameter / 2, node.y + node.vy));
-            }
-          }
-
-          for (const node of graphRuntime.nodes) {
-            const element = nodeHost.querySelector(`[data-node-id="${node.id}"]`);
-            if (!element) continue;
-            element.style.left = `${node.x}px`;
-            element.style.top = `${node.y}px`;
-          }
-
-          edgeSvg.querySelectorAll("[data-edge-index]").forEach((group) => {
-            const edge = graphRuntime.edges[Number(group.dataset.edgeIndex)];
-            const from = graphRuntime.nodes.find((node) => node.id === edge.from);
-            const to = graphRuntime.nodes.find((node) => node.id === edge.to);
-            if (!from || !to) return;
-            const path = group.querySelector("path");
-            const label = group.querySelector("text");
-            if (!path || !label) return;
-            const midX = (from.x + to.x) / 2;
-            const midY = (from.y + to.y) / 2;
-            path.setAttribute("d", `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`);
-            label.setAttribute("x", String(midX));
-            label.setAttribute("y", String(midY - 8));
-          });
-
-          graphRuntime.animationId = requestAnimationFrame(applyGraphFrame);
-        };
-
-        if (!graphRuntime._boundMove) {
-          graphRuntime._boundMove = (event) => {
-            if (!graphRuntime.dragNode) return;
-            const canvasRect = document.getElementById("graphCanvas").getBoundingClientRect();
-            graphRuntime.dragNode.x = event.clientX - canvasRect.left - graphRuntime.dragOffsetX;
-            graphRuntime.dragNode.y = event.clientY - canvasRect.top - graphRuntime.dragOffsetY;
-          };
-          graphRuntime._boundUp = () => {
-            graphRuntime.dragNode = null;
-          };
-          window.addEventListener("pointermove", graphRuntime._boundMove);
-          window.addEventListener("pointerup", graphRuntime._boundUp);
-        }
-
-        applyGraphFrame();
         document.getElementById("graphHeadline").textContent = state.backend.graph.headline;
         document.getElementById("graphNote").textContent = state.backend.graph.graph_note;
         document.getElementById("toolSummary").textContent = state.backend.graph.tool_summary;
@@ -2767,6 +3150,8 @@
 
       function renderAll() {
         switchView(state.selectedView);
+        renderFilterControls();
+        renderResearchTable();
         renderBeatList();
         renderPreferenceList();
         renderNarrationList();
@@ -2789,14 +3174,20 @@
 
       async function copyCsv() {
         await waitForDemoReady();
-        const csv = buildCsvText(state.workbook.rows);
+        const csv = buildCsvText(
+          state.selectedView === "research"
+            ? getFilteredResearchRows().map(toWorkbookRow)
+            : state.workbook.rows
+        );
         await navigator.clipboard.writeText(csv).catch(() => {});
         emitDemoAction("copy", csv, { tag: "button", role: "button", text: "Copy Sample CSV", aria_label: null }, { step: "copy-csv" });
       }
 
       async function exportCsv() {
         await waitForDemoReady();
-        const csv = buildCsvText(state.workbook.rows);
+        const exportedRows = getFilteredResearchRows().map(toWorkbookRow);
+        state.workbook.rows = cloneRows(exportedRows);
+        const csv = buildCsvText(exportedRows);
         const blob = new Blob([csv], { type: "text/csv" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
@@ -2871,40 +3262,8 @@
         if (!cellRef || !value) {
           return;
         }
-
-        const column = cellRef.replace(/[0-9]/g, "");
-        const row = Number(cellRef.replace(/[^0-9]/g, ""));
-
-        if (row === 1 && column === "A") {
-          state.workbook.headerOverrides[0] = value;
-          await recordAction("excel_headers_done", { changed: `company -> ${value}` });
-          emitDemoAction("input", value, { tag: "th", role: null, text: value, aria_label: null }, { step: "rename-company" });
-        } else if (row === 1 && column === "C") {
-          state.workbook.headerOverrides[2] = value;
-          await recordAction("excel_headers_done", { changed: `stage -> ${value}` });
-          emitDemoAction("input", value, { tag: "th", role: null, text: value, aria_label: null }, { step: "rename-stage" });
-        } else if (row === 1 && column === "G") {
-          await recordAction("excel_column_added", {
-            column_name: value,
-            recipe_patch: { ...getRecipe(), column_name: value }
-          });
-          emitDemoAction("input", value, { tag: "th", role: null, text: value, aria_label: null }, { step: "name-column" });
-        } else if (row === 2 && column === "G" && value.startsWith("=")) {
-          const recipePatch = extractRecipePatchFromFormula(value, getRecipe());
-          if (!hasFormulaColumn()) {
-            await recordAction("excel_column_added", {
-              column_name: recipePatch.column_name,
-              recipe_patch: recipePatch
-            });
-          }
-          await recordAction("excel_formula_seeded", {
-            formula: value,
-            recipe_patch: recipePatch
-          });
-          emitDemoAction("submit", value, { tag: "button", role: null, text: "Formula bar", aria_label: null }, { step: "seed-formula" });
-        }
-
-        renderAll();
+        await applyCellEdit(cellRef, value);
+        emitDemoAction(value.startsWith("=") ? "submit" : "input", value, { tag: "td", role: null, text: value, aria_label: null }, { step: "formula-bar-apply" });
       }
 
       async function saveWorkbook() {
@@ -2928,16 +3287,24 @@
         await waitForDemoReady();
         const request = document.getElementById("toolRequestInput").value.trim();
         if (!request) return;
-        state.backend = await api("/tool/personalize", {
-          method: "POST",
-          body: { request }
-        });
+        state.backend = await withBusy(
+          "Saving preference",
+          "Updating the tool and checking whether this preference should be remembered for later runs...",
+          () => api("/tool/personalize", {
+            method: "POST",
+            body: { request }
+          })
+        );
         renderAll();
       }
 
       async function generateTool() {
         await waitForDemoReady();
-        state.backend = await api("/tool/generate", { method: "POST" });
+        state.backend = await withBusy(
+          "Generating tool",
+          "Turning the repeated CSV-to-Excel cleanup into a reusable helper for this run...",
+          () => api("/tool/generate", { method: "POST" })
+        );
         renderAll();
       }
 
@@ -2965,14 +3332,18 @@
 
       async function injectSampleEmail() {
         await waitForDemoReady();
-        state.backend = await api("/inbox/inject", {
-          method: "POST",
-          body: {
-            subject: document.getElementById("sampleMailSubject").value,
-            body: document.getElementById("sampleMailBody").value,
-            from: "financial.analyst@acme-capital.com"
-          }
-        });
+        state.backend = await withBusy(
+          "Receiving sample mail",
+          "Pulling the reviewer request into Outlook and extracting the formula change...",
+          () => api("/inbox/inject", {
+            method: "POST",
+            body: {
+              subject: document.getElementById("sampleMailSubject").value,
+              body: document.getElementById("sampleMailBody").value,
+              from: "financial.analyst@acme-capital.com"
+            }
+          })
+        );
         switchView("inbox");
         renderAll();
       }
@@ -2980,7 +3351,11 @@
       async function syncGmail() {
         await waitForDemoReady();
         try {
-          const result = await api("/inbox/sync-gmail", { method: "POST" });
+          const result = await withBusy(
+            "Checking Gmail",
+            "Looking for any reviewer updates that should change the next tool run...",
+            () => api("/inbox/sync-gmail", { method: "POST" })
+          );
           if (result.state) {
             state.backend = result.state;
           }
@@ -2992,13 +3367,21 @@
 
       async function applyAnalystUpdate() {
         await waitForDemoReady();
-        state.backend = await api("/tool/apply-pending", { method: "POST" });
+        state.backend = await withBusy(
+          "Updating tool",
+          "Applying the email-driven formula change to the current build and saving it into memory...",
+          () => api("/tool/apply-pending", { method: "POST" })
+        );
         renderAll();
       }
 
       function handleHeaderAction() {
         if (state.selectedView === "excel") {
           switchView("inbox");
+          return;
+        }
+        if (state.selectedView === "inbox") {
+          void injectSampleEmail();
           return;
         }
         void syncGmail();
@@ -3035,10 +3418,57 @@
         });
       }
 
+      window.addEventListener("pointermove", (event) => {
+        if (graphRuntime.dragNode) {
+          const canvas = document.getElementById("graphCanvas");
+          const rect = canvas.getBoundingClientRect();
+          const half = graphRuntime.dragNode.diameter / 2;
+          graphRuntime.dragNode.x = Math.min(rect.width - half, Math.max(half, event.clientX - rect.left - graphRuntime.dragOffsetX));
+          graphRuntime.dragNode.y = Math.min(rect.height - half, Math.max(half, event.clientY - rect.top - graphRuntime.dragOffsetY));
+          updateGraphLayout();
+        }
+        if (!state.workbook.fillDrag) {
+          return;
+        }
+        const target = document.elementFromPoint(event.clientX, event.clientY)?.closest?.("[data-cell-ref]");
+        const targetRef = target?.dataset?.cellRef;
+        if (!targetRef) {
+          return;
+        }
+        state.workbook.fillDrag.targetRef = targetRef;
+        updateFillPreview(targetRef);
+      });
+
+      window.addEventListener("pointerup", () => {
+        if (graphRuntime.dragNode) {
+          graphRuntime.dragNode.anchorX = graphRuntime.dragNode.x;
+          graphRuntime.dragNode.anchorY = graphRuntime.dragNode.y;
+        }
+        graphRuntime.dragNode = null;
+        if (state.workbook.fillDrag) {
+          void applyFillDrag();
+        }
+      });
+
       document.querySelectorAll(".browser-tab").forEach((tab) => {
         tab.addEventListener("click", () => switchView(tab.dataset.view));
       });
 
+      document.querySelectorAll("[data-filter-group]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.research[button.dataset.filterGroup] = button.dataset.filterValue;
+          renderAll();
+        });
+      });
+      document.getElementById("segmentFilter").addEventListener("keydown", (event) => {
+        event.preventDefault();
+      });
+      document.getElementById("stageFilter").addEventListener("keydown", (event) => {
+        event.preventDefault();
+      });
+      document.getElementById("windowFilter").addEventListener("keydown", (event) => {
+        event.preventDefault();
+      });
       document.getElementById("copyCsvButton").addEventListener("click", copyCsv);
       document.getElementById("exportCsvButton").addEventListener("click", () => void exportCsv());
       document.getElementById("renameCompanyButton").addEventListener("click", () => void renameCompany());
@@ -3059,6 +3489,7 @@
         }
       });
       document.getElementById("applyPreferenceButton").addEventListener("click", () => void personalizeTool());
+      document.getElementById("receiveMailButton").addEventListener("click", () => void injectSampleEmail());
       document.getElementById("injectMailButton").addEventListener("click", () => void injectSampleEmail());
       document.getElementById("syncMailButton").addEventListener("click", () => void syncGmail());
       document.getElementById("gmailSyncButton").addEventListener("click", handleHeaderAction);

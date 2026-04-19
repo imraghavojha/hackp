@@ -3,12 +3,15 @@ import path from "node:path"
 import { mkdtemp } from "node:fs/promises"
 import { existsSync } from "node:fs"
 import { fileURLToPath } from "node:url"
+import { spawn } from "node:child_process"
 
 import { chromium } from "playwright"
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const extensionRoot = path.resolve(scriptDir, "..")
+const repoRoot = path.resolve(extensionRoot, "..")
 const extensionPath = path.join(extensionRoot, "build", "chrome-mv3-prod")
+const backgroundChildren = []
 
 async function ensure(url) {
   const response = await fetch(url)
@@ -17,14 +20,54 @@ async function ensure(url) {
   }
 }
 
+async function isHealthy(url) {
+  try {
+    await ensure(url)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function startProcess(command, args, cwd) {
+  const child = spawn(command, args, {
+    cwd,
+    stdio: "ignore",
+    detached: false
+  })
+  backgroundChildren.push(child)
+  return child
+}
+
+async function waitForUrl(url, timeoutMs = 15000) {
+  const startedAt = Date.now()
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await isHealthy(url)) {
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  throw new Error(`Timed out waiting for ${url}`)
+}
+
+async function ensureDemoServices() {
+  if (!(await isHealthy("http://127.0.0.1:8000/health"))) {
+    startProcess("python3", ["-m", "uvicorn", "backend.app.main:app", "--port", "8000"], repoRoot)
+    await waitForUrl("http://127.0.0.1:8000/health")
+  }
+
+  if (!(await isHealthy("http://127.0.0.1:8012/portal.example.com/leads/"))) {
+    startProcess("python3", ["-m", "http.server", "8012", "--directory", "fixtures/mock_sites"], repoRoot)
+    await waitForUrl("http://127.0.0.1:8012/portal.example.com/leads/")
+  }
+}
+
 async function main() {
   if (!existsSync(extensionPath) || !existsSync(path.join(extensionPath, "manifest.json"))) {
     throw new Error(`Built extension not found at ${extensionPath}. Run 'npm run build' first.`)
   }
 
-  await ensure("http://127.0.0.1:8000/health")
-  await ensure("http://127.0.0.1:8001/health")
-  await ensure("http://127.0.0.1:8012/portal.example.com/leads/")
+  await ensureDemoServices()
 
   await fetch("http://127.0.0.1:8000/demo/showcase/reset", { method: "POST" })
 
@@ -54,7 +97,19 @@ async function main() {
   }
 }
 
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.on(signal, () => {
+    for (const child of backgroundChildren) {
+      child.kill(signal)
+    }
+    process.exit(0)
+  })
+}
+
 main().catch((error) => {
   console.error(error)
+  for (const child of backgroundChildren) {
+    child.kill("SIGTERM")
+  }
   process.exit(1)
 })

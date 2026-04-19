@@ -1,7 +1,7 @@
 import { backendApi } from "./api"
 import { withRetries } from "./retry"
 import { FLUSH_ALARM_NAME, FLUSH_INTERVAL_MS, MAX_BUFFERED_EVENTS } from "../lib/constants"
-import { getExtensionSettings, getLibraryTools, getQueuedEvents, setLibraryTools, setQueuedEvents, updateExtensionSettings } from "../lib/storage"
+import { clearShowcaseState, getExtensionSettings, getLibraryTools, getQueuedEvents, setLibraryTools, setQueuedEvents, updateExtensionSettings } from "../lib/storage"
 import { sortLibraryTools, updateLibraryTool, upsertLibraryTools } from "../lib/library"
 import type { EventsBatchRequest, ObservedEvent } from "../types/events"
 import type { ExtensionMessage, ExtensionMessageResponse, ToolFeedbackPayload } from "../types/messages"
@@ -82,19 +82,29 @@ async function fetchAnalysisForUrl(url: string): Promise<ExtensionMessageRespons
 }
 
 async function openTool(toolId: string): Promise<ExtensionMessageResponse> {
-  const url = backendApi.getArtifactUrl(toolId)
-
   try {
-    await chrome.windows.create({
-      url,
-      type: "popup",
-      width: 560,
-      height: 760,
-      focused: true
-    })
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+    const activeTab = tabs[0]
+    if (activeTab?.id !== undefined) {
+      const response = await chrome.tabs.sendMessage(activeTab.id, {
+        type: "content/open-tool-inline",
+        toolId
+      })
+      if (response?.ok) {
+        const library = await getLibraryTools()
+        const updated = updateLibraryTool(library, toolId, {
+          last_opened_at: new Date().toISOString()
+        })
+        await setLibraryTools(sortLibraryTools(updated))
+        return { ok: true }
+      }
+    }
   } catch {
-    await chrome.tabs.create({ url })
+    // Fall through to opening a regular tab if the content surface isn't available.
   }
+
+  const url = backendApi.getArtifactUrl(toolId)
+  await chrome.tabs.create({ url })
 
   const library = await getLibraryTools()
   const updated = updateLibraryTool(library, toolId, {
@@ -107,6 +117,11 @@ async function openTool(toolId: string): Promise<ExtensionMessageResponse> {
 async function listLibrary(): Promise<ExtensionMessageResponse> {
   const library = await getLibraryTools()
   return { ok: true, library: sortLibraryTools(library) }
+}
+
+async function resetShowcaseExtensionState(): Promise<ExtensionMessageResponse> {
+  await clearShowcaseState()
+  return { ok: true }
 }
 
 async function getSettings(): Promise<ExtensionMessageResponse> {
@@ -173,6 +188,8 @@ async function handleMessage(message: ExtensionMessage): Promise<ExtensionMessag
       return openTool(message.toolId)
     case "extension/list-library":
       return listLibrary()
+    case "extension/clear-showcase-state":
+      return resetShowcaseExtensionState()
     case "extension/get-settings":
       return getSettings()
     case "extension/update-user-id":

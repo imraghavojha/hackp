@@ -17,6 +17,12 @@ function storageSet(values: Record<string, unknown>): Promise<void> {
   })
 }
 
+function storageRemove(keys: string[]): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.remove(keys, () => resolve())
+  })
+}
+
 export async function getExtensionSettings(): Promise<ExtensionSettings> {
   const stored = await storageGet<Partial<ExtensionSettings>>(STORAGE_KEYS.settings)
   return {
@@ -47,4 +53,8 @@ export async function getLibraryTools(): Promise<CachedToolEntry[]> {
 
 export async function setLibraryTools(tools: CachedToolEntry[]): Promise<void> {
   await storageSet({ [STORAGE_KEYS.library]: tools })
+}
+
+export async function clearShowcaseState(): Promise<void> {
+  await storageRemove([STORAGE_KEYS.queue, STORAGE_KEYS.library])
 }

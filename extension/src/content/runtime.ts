@@ -26,6 +26,11 @@ interface ObserverContext {
   refreshInFlight: boolean
 }
 
+interface ContentToolOpenMessage {
+  type: "content/open-tool-inline"
+  toolId: string
+}
+
 let fallbackSessionId: string | null = null
 
 function createSessionId(): string {
@@ -273,6 +278,29 @@ async function refreshSuggestion(
   }
 }
 
+async function openInlineToolFromMessage(context: ObserverContext, toolId: string): Promise<boolean> {
+  const response = await sendExtensionMessage({
+    type: "extension/fetch-tools-for-url",
+    url: window.location.href,
+    allowSeedFallback: true
+  })
+  const analysisResponse = await sendExtensionMessage({
+    type: "extension/fetch-analysis-for-url",
+    url: window.location.href
+  })
+  const analysis = analysisResponse.ok ? analysisResponse.analysis ?? null : null
+  const tools = response.ok && response.tools ? response.tools : []
+  const tool = tools.find((item) => item.id === toolId) ?? pickSuggestedTool(window.location.href, tools)
+  if (!tool) {
+    return false
+  }
+
+  const handle = await showInlineHelper(tool, analysis)
+  context.currentHelper?.dispose()
+  context.currentHelper = handle
+  return true
+}
+
 function observeHistory(onChange: (reason: string) => void) {
   const originalPushState = history.pushState.bind(history)
   const originalReplaceState = history.replaceState.bind(history)
@@ -508,6 +536,27 @@ export async function bootstrapContentObserver(): Promise<void> {
   )
 
   registerDemoActionBridge(context, enqueueRawEvent)
+
+  chrome.runtime.onMessage.addListener((message: ContentToolOpenMessage, _sender: unknown, sendResponse: (response: { ok: boolean }) => void) => {
+    if (message?.type !== "content/open-tool-inline") {
+      return false
+    }
+
+    void openInlineToolFromMessage(context, message.toolId)
+      .then((opened) => sendResponse({ ok: opened }))
+      .catch(() => sendResponse({ ok: false }))
+    return true
+  })
+
+  window.addEventListener("pwa-demo-reset", () => {
+    context.currentHelper?.dispose()
+    context.currentHelper = null
+    context.currentToast?.dispose()
+    context.currentToast = null
+    context.lastSuggestionKey = null
+    context.repeatedActionCount = 0
+    void sendExtensionMessage({ type: "extension/clear-showcase-state" })
+  })
 
   observeHistory((reason) => {
     context.currentHelper?.dispose()

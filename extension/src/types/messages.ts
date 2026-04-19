@@ -20,6 +20,7 @@ export type ExtensionMessage =
   | { type: "extension/fetch-tools-for-url"; url: string; allowSeedFallback?: boolean }
   | { type: "extension/fetch-analysis-for-url"; url: string }
   | { type: "extension/open-tool"; toolId: string }
+  | { type: "extension/clear-showcase-state" }
   | { type: "extension/list-library" }
   | { type: "extension/get-settings" }
   | { type: "extension/update-user-id"; userId: string }

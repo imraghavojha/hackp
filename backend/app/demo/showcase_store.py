@@ -228,6 +228,20 @@ def _refresh_graph(state: dict[str, Any]) -> dict[str, Any]:
         if workbook.get("generated_by_tool"):
             edges.append({"from": "tool", "to": "excel", "label": "prefilled workbook"})
 
+    if tool.get("personalization_notes"):
+        nodes.append(
+            {
+                "id": "preference",
+                "label": "Saved preference",
+                "kind": "update",
+                "x": 995,
+                "y": 70,
+                "size": "md",
+            }
+        )
+        edges.append({"from": "tool", "to": "preference", "label": "remember for later"})
+        edges.append({"from": "preference", "to": "memory", "label": "reusable preference"})
+
     pending_update = inbox.get("pending_update")
     if pending_update:
         nodes.append(

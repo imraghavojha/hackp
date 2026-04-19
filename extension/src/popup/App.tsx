@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 
+import { backendApi } from "../background/api"
 import { sendExtensionMessage } from "../lib/messaging"
 import type { ExtensionSettings } from "../types/messages"
 import type { AnalysisRecord, CachedToolEntry, ToolRecord } from "../types/tools"
@@ -18,6 +19,8 @@ export function PopupApp() {
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisRecord | null>(null)
   const [settings, setSettings] = useState<ExtensionSettings | null>(null)
   const [status, setStatus] = useState("Loading extension state...")
+  const [showcaseState, setShowcaseState] = useState<Record<string, any> | null>(null)
+  const [currentUrl, setCurrentUrl] = useState("")
 
   useEffect(() => {
     const retryTimeouts = new Set<number>()
@@ -37,18 +40,32 @@ export function PopupApp() {
       }
 
       const currentUrl = await getCurrentTabUrl()
+      setCurrentUrl(currentUrl)
       if (currentUrl) {
+        const isShowcasePortal = currentUrl.includes("portal.example.com/leads")
+        if (currentUrl.includes("portal.example.com/leads")) {
+          try {
+            const showcase = await backendApi.getShowcaseState()
+            setShowcaseState(showcase)
+          } catch {
+            setShowcaseState(null)
+          }
+        } else {
+          setShowcaseState(null)
+        }
+
         const retryDelays = [2_500, 5_500]
         let retryIndex = 0
 
-        const loadCurrentPageState = async () => {
-          const [toolsResponse, analysisResponse] = await Promise.all([
-            sendExtensionMessage({
-              type: "extension/fetch-tools-for-url",
-              url: currentUrl
-            }),
-            sendExtensionMessage({
-              type: "extension/fetch-analysis-for-url",
+          const loadCurrentPageState = async () => {
+            const [toolsResponse, analysisResponse] = await Promise.all([
+              sendExtensionMessage({
+                type: "extension/fetch-tools-for-url",
+                url: currentUrl,
+                allowSeedFallback: isShowcasePortal
+              }),
+              sendExtensionMessage({
+                type: "extension/fetch-analysis-for-url",
               url: currentUrl
             })
           ])
@@ -100,6 +117,27 @@ export function PopupApp() {
   }, [])
 
   const combinedTools = useMemo(() => {
+    if (currentUrl.includes("portal.example.com/leads")) {
+      return matchingTools.map((tool) => {
+        if (!showcaseState) {
+          return tool as CachedToolEntry
+        }
+        const workflow = showcaseState.workflow ?? {}
+        const showcaseTool = showcaseState.tool ?? {}
+        const scenes = showcaseState.scenes ?? {}
+        return {
+          ...tool,
+          name: showcaseTool.name ?? tool.name,
+          description:
+            scenes.tool_generated
+              ? "Current run helper: opens inline and replays this demo's latest CSV-to-Excel workflow."
+              : Number(workflow.times_seen ?? 0) >= 1
+                ? "Current run helper is primed from the observed workbook edits and waiting for Add code."
+                : "No current-run helper yet. Finish the first workbook pass and reset remains clean."
+        } as CachedToolEntry
+      })
+    }
+
     const byId = new Map<string, CachedToolEntry>()
     for (const tool of libraryTools) {
       byId.set(tool.id, tool)
@@ -115,6 +153,26 @@ export function PopupApp() {
     await sendExtensionMessage({ type: "extension/open-tool", toolId })
     setStatus(`Opened ${toolId}.`)
   }
+
+  const showcaseSummary = useMemo(() => {
+    if (!showcaseState) {
+      return null
+    }
+    const workflow = showcaseState.workflow ?? {}
+    const tool = showcaseState.tool ?? {}
+    const scenes = showcaseState.scenes ?? {}
+    const pending = tool.pending_update
+    if (pending) {
+      return `Pending update: ${pending.suggested_change}`
+    }
+    if (scenes.tool_generated) {
+      return `Current run tool ready inline: ${tool.recipe?.formula_text ?? "formula saved"}`
+    }
+    if (Number(workflow.times_seen ?? 0) >= 1) {
+      return "Current run remembered. Click open after Add code is offered on day two."
+    }
+    return "Reset is clean. No carried-over helper is shown until this run learns one."
+  }, [showcaseState])
 
   return (
     <main
@@ -139,6 +197,11 @@ export function PopupApp() {
         <p style={{ margin: "8px 0 0", color: "#9ca3af", fontSize: "0.82rem" }}>
           Signed in as <strong style={{ color: "#f3f4f6" }}>{settings?.userId ?? "bob"}</strong>
         </p>
+        {showcaseSummary ? (
+          <p style={{ margin: "8px 0 0", color: "#93c5fd", fontSize: "0.8rem", lineHeight: 1.4 }}>
+            {showcaseSummary}
+          </p>
+        ) : null}
       </section>
 
       {currentAnalysis ? (
@@ -181,7 +244,9 @@ export function PopupApp() {
                 color: "#9ca3af",
                 background: "#0f172a"
               }}>
-              Visit a matching page and tool suggestions will start appearing here.
+              {currentUrl.includes("portal.example.com/leads")
+                ? "This reset is clean. Finish the first pass and the current run's helper state will appear here."
+                : "Visit a matching page and tool suggestions will start appearing here."}
             </div>
           ) : (
             combinedTools.map((tool) => (
